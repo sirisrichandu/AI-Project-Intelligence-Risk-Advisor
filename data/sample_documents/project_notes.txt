@@ -1,0 +1,20 @@
+AI Project Intelligence and Risk Advisor
+
+Project Scope:
+The system analyzes project documents and provides project intelligence.
+
+Deliverables:
+1. Document ingestion module
+2. RAG pipeline
+3. Risk detection
+4. Project health scoring
+5. Conversational project assistant
+
+Project Deadline:
+December 15, 2026
+
+Risks:
+Incomplete project documentation may cause delays.
+
+Blockers:
+Some project information is currently unavailable.
