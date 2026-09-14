@@ -1,18 +1,28 @@
-import streamlit as st
 import os
+import streamlit as st
 
 from ingestion.document_loader import load_document
+
 from rag.chunking import chunk_text
+
 from rag.chroma_store import (
     add_documents,
     search_documents,
     collection
 )
 
+from agents.scope_extraction_agent import extract_scope
 
-# --------------------------------------------------
-# Page Configuration
-# --------------------------------------------------
+from agents.risk_detection_agent import detect_risks
+
+from agents.blocker_action_agent import (
+    identify_blockers_and_actions
+)
+
+
+# ============================================================
+# PAGE CONFIGURATION
+# ============================================================
 
 st.set_page_config(
     page_title="AI Project Intelligence & Risk Advisor",
@@ -21,34 +31,51 @@ st.set_page_config(
 )
 
 
-# --------------------------------------------------
-# Application Header
-# --------------------------------------------------
+# ============================================================
+# APPLICATION HEADER
+# ============================================================
 
-st.title("🤖 AI Project Intelligence & Risk Advisor")
+st.title(
+    "🤖 AI Project Intelligence & Risk Advisor"
+)
 
 st.write(
-    "Upload project documents and build a RAG knowledge base "
-    "using ChromaDB."
+    "Upload project documents and analyze them using "
+    "RAG, Scope Extraction, Risk Detection, and "
+    "Blocker & Action Item Agents."
 )
 
 
-# --------------------------------------------------
-# Document Upload
-# --------------------------------------------------
+# ============================================================
+# DOCUMENT UPLOAD
+# ============================================================
 
-st.subheader("📂 Upload Project Documents")
+st.subheader(
+    "📂 Upload Project Documents"
+)
 
 uploaded_files = st.file_uploader(
     "Upload PDF, DOCX, CSV or TXT files",
-    type=["pdf", "docx", "csv", "txt"],
+    type=[
+        "pdf",
+        "docx",
+        "csv",
+        "txt"
+    ],
     accept_multiple_files=True
 )
 
 
+# ============================================================
+# PROCESS UPLOADED DOCUMENTS
+# ============================================================
+
 if uploaded_files:
 
-    os.makedirs("uploads", exist_ok=True)
+    os.makedirs(
+        "uploads",
+        exist_ok=True
+    )
 
     for uploaded_file in uploaded_files:
 
@@ -57,17 +84,28 @@ if uploaded_files:
             uploaded_file.name
         )
 
-        # Save uploaded file
-        with open(file_path, "wb") as file:
-            file.write(uploaded_file.getbuffer())
+        # --------------------------------------------------------
+        # Save uploaded document
+        # --------------------------------------------------------
+
+        with open(
+            file_path,
+            "wb"
+        ) as file:
+
+            file.write(
+                uploaded_file.getbuffer()
+            )
 
         try:
 
-            # --------------------------------------------------
-            # Step 1: Extract Text
-            # --------------------------------------------------
+            # ====================================================
+            # STEP 1: EXTRACT TEXT
+            # ====================================================
 
-            text = load_document(file_path)
+            text = load_document(
+                file_path
+            )
 
             if not text.strip():
 
@@ -79,11 +117,13 @@ if uploaded_files:
                 continue
 
 
-            # --------------------------------------------------
-            # Step 2: Create Chunks
-            # --------------------------------------------------
+            # ====================================================
+            # STEP 2: CREATE CHUNKS
+            # ====================================================
 
-            chunks = chunk_text(text)
+            chunks = chunk_text(
+                text
+            )
 
             if not chunks:
 
@@ -95,9 +135,9 @@ if uploaded_files:
                 continue
 
 
-            # --------------------------------------------------
-            # Step 3: Prepare Source Metadata
-            # --------------------------------------------------
+            # ====================================================
+            # STEP 3: PREPARE SOURCE METADATA
+            # ====================================================
 
             sources = [
                 uploaded_file.name
@@ -105,9 +145,9 @@ if uploaded_files:
             ]
 
 
-            # --------------------------------------------------
-            # Step 4: Store in ChromaDB
-            # --------------------------------------------------
+            # ====================================================
+            # STEP 4: STORE DOCUMENTS IN CHROMADB
+            # ====================================================
 
             added_count = add_documents(
                 chunks,
@@ -115,9 +155,9 @@ if uploaded_files:
             )
 
 
-            # --------------------------------------------------
-            # Success Message
-            # --------------------------------------------------
+            # ====================================================
+            # SUCCESS MESSAGE
+            # ====================================================
 
             st.success(
                 f"✅ {uploaded_file.name} "
@@ -138,11 +178,13 @@ if uploaded_files:
             )
 
 
-# --------------------------------------------------
-# Knowledge Base Statistics
-# --------------------------------------------------
+# ============================================================
+# KNOWLEDGE BASE STATISTICS
+# ============================================================
 
-st.subheader("📊 Knowledge Base")
+st.subheader(
+    "📊 Knowledge Base"
+)
 
 try:
 
@@ -168,27 +210,35 @@ try:
 except Exception as error:
 
     st.error(
-        f"Unable to read ChromaDB: {error}"
+        f"❌ Unable to read ChromaDB: {error}"
     )
 
 
-# --------------------------------------------------
-# Project Question Answering
-# --------------------------------------------------
+# ============================================================
+# PROJECT QUESTION
+# ============================================================
 
-st.subheader("💬 Ask About Your Project")
+st.subheader(
+    "💬 Ask About Your Project"
+)
 
 question = st.text_input(
     "Enter your question",
-    placeholder="Example: What is the project about?"
+    placeholder="Example: What are the major risks in the project?"
 )
 
 
-# --------------------------------------------------
-# Search Button
-# --------------------------------------------------
+# ============================================================
+# SEARCH BUTTON
+# ============================================================
 
-if st.button("🔍 Search Project"):
+if st.button(
+    "🔍 Search Project"
+):
+
+    # ========================================================
+    # VALIDATE QUESTION
+    # ========================================================
 
     if not question.strip():
 
@@ -196,31 +246,35 @@ if st.button("🔍 Search Project"):
             "⚠️ Please enter a question."
         )
 
+
+    # ========================================================
+    # VALIDATE KNOWLEDGE BASE
+    # ========================================================
+
     elif collection.count() == 0:
 
         st.warning(
             "⚠️ Please upload project documents first."
         )
 
+
     else:
 
         try:
 
-            # --------------------------------------------------
-            # Semantic Search using ChromaDB
-            # --------------------------------------------------
+            # ====================================================
+            # STEP 1: GENERAL SEMANTIC SEARCH
+            # ====================================================
 
             results = search_documents(
                 question,
-                top_k=5
+                top_k=10
             )
 
 
-            # --------------------------------------------------
-            # Display Retrieved Information
-            # --------------------------------------------------
-
-            st.subheader("📚 Retrieved Information")
+            # ====================================================
+            # STEP 2: GET RETRIEVED DOCUMENTS
+            # ====================================================
 
             documents = results.get(
                 "documents",
@@ -238,22 +292,41 @@ if st.button("🔍 Search Project"):
             )[0]
 
 
+            # ====================================================
+            # STEP 3: DISPLAY RETRIEVED INFORMATION
+            # ====================================================
+
+            st.subheader(
+                "📚 Retrieved Information"
+            )
+
             if documents:
 
-                for i, document in enumerate(documents):
+                for i, document in enumerate(
+                    documents
+                ):
 
-                    source = metadatas[i].get(
-                        "source",
-                        "Unknown document"
-                    )
+                    if i < len(metadatas):
+
+                        source = metadatas[i].get(
+                            "source",
+                            "Unknown document"
+                        )
+
+                    else:
+
+                        source = "Unknown document"
+
 
                     st.markdown(
                         f"### Result {i + 1}"
                     )
 
-                    st.write(document)
+                    st.write(
+                        document
+                    )
 
-                    if distances:
+                    if i < len(distances):
 
                         st.caption(
                             f"📄 Source: {source} | "
@@ -267,12 +340,144 @@ if st.button("🔍 Search Project"):
                         )
 
 
+                # ====================================================
+                # STEP 4: GENERAL RETRIEVED CONTEXT
+                # ====================================================
+
+                combined_context = "\n\n".join(
+                    documents
+                )
+
+
+                # ====================================================
+                # STEP 5: ADDITIONAL SCOPE-SPECIFIC RETRIEVAL
+                # ====================================================
+
+                scope_query = """
+Project goal, project scope, included scope,
+excluded scope, major deliverables, milestones,
+milestone dates, project timeline, deadlines,
+team responsibilities, team roles, and ownership.
+"""
+
+                scope_results = search_documents(
+                    scope_query,
+                    top_k=10
+                )
+
+                scope_documents = scope_results.get(
+                    "documents",
+                    [[]]
+                )[0]
+
+                scope_context = "\n\n".join(
+                    scope_documents
+                )
+
+
+                # ====================================================
+                # STEP 6: COMBINE GENERAL + SCOPE CONTEXT
+                # ====================================================
+
+                scope_combined_context = (
+                    combined_context
+                    + "\n\n"
+                    + scope_context
+                )
+
+
+                # ====================================================
+                # STEP 7: SCOPE EXTRACTION AGENT
+                # ====================================================
+
+                st.subheader(
+                    "📋 Scope & Deliverable Extraction"
+                )
+
+                try:
+
+                    scope_data = extract_scope(
+                        scope_combined_context
+                    )
+
+                    st.json(
+                        scope_data
+                    )
+
+                except Exception as error:
+
+                    st.error(
+                        f"❌ Scope extraction failed: {error}"
+                    )
+
+
+                # ====================================================
+                # STEP 8: RISK DETECTION AGENT
+                # ====================================================
+
+                st.subheader(
+                    "⚠️ Risk Detection & Delivery Forecast"
+                )
+
+                try:
+
+                    risk_data = detect_risks(
+                        combined_context
+                    )
+
+                    st.json(
+                        risk_data
+                    )
+
+                except Exception as error:
+
+                    st.error(
+                        f"❌ Risk detection failed: {error}"
+                    )
+
+
+                # ====================================================
+                # STEP 9: BLOCKER & ACTION ITEM AGENT
+                # ====================================================
+
+                st.subheader(
+                    "🚧 Blockers & Action Items"
+                )
+
+                try:
+
+                    blocker_action_data = (
+                        identify_blockers_and_actions(
+                            combined_context
+                        )
+                    )
+
+                    st.json(
+                        blocker_action_data
+                    )
+
+                except Exception as error:
+
+                    st.error(
+                        "❌ Blocker & Action Item "
+                        f"detection failed: {error}"
+                    )
+
+
+            # ========================================================
+            # NO DOCUMENTS FOUND
+            # ========================================================
+
             else:
 
                 st.info(
-                    "No relevant information found."
+                    "ℹ️ No relevant information found."
                 )
 
+
+        # ========================================================
+        # SEARCH ERROR
+        # ========================================================
 
         except Exception as error:
 

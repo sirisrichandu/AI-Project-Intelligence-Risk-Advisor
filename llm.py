@@ -1,29 +1,34 @@
-import os
-
-from dotenv import load_dotenv
-from openai import OpenAI
+import requests
 
 
-load_dotenv()
+# ============================================================
+# OLLAMA CONFIGURATION
+# ============================================================
+
+OLLAMA_URL = "http://localhost:11434/api/generate"
+
+MODEL_NAME = "qwen2.5:1.5b"
 
 
-client = OpenAI(
-    api_key=os.getenv(
-        "OPENAI_API_KEY"
-    )
-)
+# ============================================================
+# LLM RESPONSE FUNCTION
+# ============================================================
 
+def generate_answer(question, context):
+    """
+    Generate an answer using the local Ollama LLM.
 
-def generate_answer(
-    question,
-    context
-):
+    The answer is generated using only the
+    retrieved project context.
+    """
 
     prompt = f"""
 You are an AI Project Intelligence Assistant.
 
-Answer the user's question using only
-the project context provided below.
+Answer the user's question using ONLY the project
+context provided below.
+
+Do not use outside knowledge.
 
 If the answer is not available in the context,
 say:
@@ -42,12 +47,25 @@ User Question:
 Answer clearly and concisely.
 """
 
-    response = client.responses.create(
 
-        model="gpt-5-mini",
+    payload = {
+        "model": MODEL_NAME,
+        "prompt": prompt,
+        "stream": False
+    }
 
-        input=prompt
 
+    response = requests.post(
+        OLLAMA_URL,
+        json=payload,
+        timeout=300
     )
 
-    return response.output_text
+
+    response.raise_for_status()
+
+
+    result = response.json()
+
+
+    return result["response"]

@@ -1,13 +1,18 @@
 def chunk_text(
     text,
-    chunk_size=500,
-    overlap=50
+    chunk_size=1000,
+    overlap=150
 ):
+    """
+    Split project documents into overlapping chunks.
+
+    Larger chunks help preserve related information such as
+    milestones, timelines, responsibilities, and project risks.
+    """
 
     chunks = []
 
     start = 0
-
     text_length = len(text)
 
     while start < text_length:
