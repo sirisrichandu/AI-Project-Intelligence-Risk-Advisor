@@ -1,32 +1,31 @@
-import requests
+import os
+from dotenv import load_dotenv
+from google import genai
 
+# Load environment variables
+load_dotenv()
 
-# ============================================================
-# OLLAMA CONFIGURATION
-# ============================================================
+# Get Gemini API key
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
-OLLAMA_URL = "http://localhost:11434/api/generate"
+if not GEMINI_API_KEY:
+    raise ValueError(
+        "GEMINI_API_KEY is missing from the .env file."
+    )
 
-MODEL_NAME = "qwen2.5:1.5b"
+# Create Gemini client
+client = genai.Client(api_key=GEMINI_API_KEY)
 
+MODEL_NAME = "gemini-3.6-flash"
 
-# ============================================================
-# LLM RESPONSE FUNCTION
-# ============================================================
 
 def generate_answer(question, context):
-    """
-    Generate an answer using the local Ollama LLM.
-
-    The answer is generated using only the
-    retrieved project context.
-    """
 
     prompt = f"""
 You are an AI Project Intelligence Assistant.
 
-Answer the user's question using ONLY the project
-context provided below.
+Answer the user's question using ONLY the
+project context provided below.
 
 Do not use outside knowledge.
 
@@ -47,25 +46,9 @@ User Question:
 Answer clearly and concisely.
 """
 
-
-    payload = {
-        "model": MODEL_NAME,
-        "prompt": prompt,
-        "stream": False
-    }
-
-
-    response = requests.post(
-        OLLAMA_URL,
-        json=payload,
-        timeout=300
+    response = client.models.generate_content(
+        model=MODEL_NAME,
+        contents=prompt
     )
 
-
-    response.raise_for_status()
-
-
-    result = response.json()
-
-
-    return result["response"]
+    return response.text

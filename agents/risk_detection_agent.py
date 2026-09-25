@@ -5,185 +5,186 @@ from llm import generate_answer
 def detect_risks(context):
 
     question = """
-You are the Risk Detection and Delivery Forecasting Agent for a project.
+You are the Risk Detection and Delivery Forecasting Agent.
 
 Analyze ONLY the project context provided below.
 
-Your job is to identify risks that are explicitly supported by the
-project context.
+Your task is to identify FUTURE risks and provide an evidence-based
+delivery forecast.
 
 ==================================================
 RISK DEFINITIONS
 ==================================================
 
 1. Schedule Risk
-A possible future delay that may affect a milestone, deadline,
-or project delivery.
+A documented possibility that a task, milestone, deadline, or
+project delivery may be delayed.
 
 2. Technical Risk
-A possible future technical problem that may affect implementation,
-integration, testing, or delivery.
+A documented possibility of a future technical problem affecting
+implementation, integration, testing, performance, or delivery.
 
 3. Dependency Risk
-A possible future problem caused by one task/team depending on
-another task/team.
+A documented possibility caused by one task, team, system, or
+external service depending on another.
 
 4. Resource Risk
-A possible future problem caused by insufficient people, skills,
+A documented possibility caused by insufficient people, skills,
 equipment, budget, or other resources.
 
 5. Requirement Risk
-A possible future problem caused by unclear, changing, incomplete,
+A documented possibility caused by unclear, changing, incomplete,
 or conflicting requirements.
 
 ==================================================
-STRICT GROUNDING RULES
+MOST IMPORTANT RULE: RISK MUST BE FUTURE
 ==================================================
 
-- Use ONLY facts explicitly present in the project context.
+Risk = something that MAY negatively affect the project in the future.
+
+Issue = something that has ALREADY happened.
+
+Blocker = a CURRENT problem that is preventing work.
+
+Examples:
+
+"Payment integration may delay testing."
+→ Risk
+
+"Payment integration is delayed by 4 days."
+→ Issue, NOT a risk
+
+"QA cannot start because backend APIs are unavailable."
+→ Blocker, NOT a risk
+
+Do NOT classify an issue or blocker as a risk.
+
+==================================================
+GROUNDING RULES
+==================================================
+
+- Use ONLY information explicitly supported by the context.
 - Do NOT use outside knowledge.
 - Do NOT invent risks.
-- Do NOT assume a risk that is not mentioned or logically supported
-  by the context.
-- Every risk description must be traceable to a statement in the
-  project context.
+- Do NOT create risks simply because a milestone is Pending.
+- Do NOT create risks simply because a task is In Progress.
+- Do NOT create risks simply because a dependency exists.
+- A dependency becomes a Dependency Risk only when the context
+  indicates that the dependency could negatively affect delivery.
+- Every risk must be traceable to a statement in the context.
 
-IMPORTANT:
+==================================================
+RISK TYPE CLASSIFICATION
+==================================================
 
-The project context may contain a section called "Potential Risks".
-When this section exists, use those statements as the PRIMARY source
-for risk identification.
+Choose the risk type based on the actual documented cause.
 
-For example, if the context says:
-
+If the context says:
 "Delay in API development may delay frontend integration."
-
-Then identify:
-
-risk_type = "Dependency Risk" or "Schedule Risk"
-
-description = the documented risk.
-
-Do NOT create additional risks from unrelated milestones.
+→ Dependency Risk
 
 If the context says:
-
-"Incomplete project documents may reduce extraction accuracy."
-
-This is a documented risk.
+"Payment integration may delay the release."
+→ Schedule Risk
 
 If the context says:
-
-"Unresolved dependencies may affect downstream testing."
-
-This is a documented dependency risk.
+"API performance may affect system testing."
+→ Technical Risk
 
 If the context says:
+"Insufficient developers may delay implementation."
+→ Resource Risk
 
-"Limited test data may delay validation of analytics features."
+If the context says:
+"Client requirements are unclear and may change."
+→ Requirement Risk
 
-This is a documented project/data availability risk.
-
-Do NOT automatically classify it as Resource Risk.
-
-If the context does NOT explicitly mention:
-- unclear requirements
-- changing requirements
-- conflicting requirements
-
-then DO NOT create a Requirement Risk.
-
-If the context does NOT explicitly mention:
-- lack of staff
-- lack of skills
-- lack of budget
-- lack of equipment
-- insufficient personnel
-
-then DO NOT create a Resource Risk.
-
-Do NOT create Technical Risks merely because a technical component
-is still being developed.
-
-A milestone being "Pending" does NOT automatically mean it is a risk.
-
-A milestone being "In Progress" does NOT automatically mean it is a risk.
+Do NOT force a risk into a category when the evidence does not
+support that category.
 
 ==================================================
-RISK vs ISSUE vs BLOCKER
+PROBABILITY
 ==================================================
 
-Risk:
-A possible future negative event.
+Use:
+- Low
+- Medium
+- High
 
-Issue:
-A problem that has already happened.
+Choose based ONLY on evidence in the context.
 
-Blocker:
-A current problem that is actively preventing work.
-
-Do NOT classify blockers or existing issues as future risks.
+If probability is not explicitly stated and cannot reasonably be
+supported by the context, use "Medium" rather than inventing
+specific evidence.
 
 ==================================================
-PROBABILITY AND IMPACT
+IMPACT
 ==================================================
 
-For every identified risk provide:
+Use:
+- Low
+- Medium
+- High
 
-- probability: Low, Medium, or High
-- impact: Low, Medium, or High
+Choose based on the documented affected area.
 
-Use High only when the project context provides enough evidence
-that the risk is significant.
-
-Do not randomly assign High.
+High impact should be used only when the context indicates that
+the risk can significantly affect testing, major milestones,
+release, or project delivery.
 
 ==================================================
 RECOMMENDED ACTION
 ==================================================
 
-Provide a practical action that directly addresses the identified
-risk.
+Give a practical action directly related to the documented risk.
 
-Do NOT invent teams, dates, requirements, or resources.
+Do NOT invent:
+- teams
+- dates
+- requirements
+- resources
 
 ==================================================
 DELIVERY FORECAST
 ==================================================
 
-Provide an early delivery forecast using ONLY the project context.
+Allowed values:
 
-Allowed status values:
+On Track
+At Risk
+Delayed
 
-- On Track
-- At Risk
-- Delayed
+Use "On Track" when the context contains no significant evidence
+of a delivery threat.
 
-Use:
+Use "At Risk" when documented future risks, important dependencies,
+pending work, or current issues could affect delivery.
 
-"On Track" when the available evidence does not indicate a
-significant delivery threat.
+Use "Delayed" ONLY when the context explicitly says that the project
+or an important milestone is already delayed.
 
-"At Risk" when documented risks, dependencies, pending work,
-or approaching milestones could affect delivery.
+IMPORTANT:
+A current issue or blocker can be evidence for an "At Risk"
+forecast, but it must NOT itself be listed as a future risk.
 
-"Delayed" only when the context explicitly indicates that the
-project or an important milestone is already delayed.
+The forecast is an early warning, NOT a guarantee.
 
-The forecast is NOT a guarantee.
-
-The reasoning must mention the actual evidence from the context.
+The reasoning must mention actual evidence from the context.
 
 ==================================================
-OUTPUT FORMAT
+OUTPUT RULES
 ==================================================
 
 Return ONLY valid JSON.
 
 Do NOT use markdown code fences.
-Do NOT write explanations before or after the JSON.
+Do NOT add explanations.
 
-Return exactly this structure:
+If no future risks are supported by the context, return:
+
+"risks": []
+
+Return exactly:
 
 {
     "risks": [
@@ -205,7 +206,6 @@ Return exactly this structure:
 
     answer = generate_answer(question, context)
 
-    # Clean markdown code fences
     answer = answer.strip()
 
     if answer.startswith("```json"):
@@ -217,7 +217,6 @@ Return exactly this structure:
     if answer.endswith("```"):
         answer = answer[:-3].strip()
 
-    # Parse JSON
     try:
         return json.loads(answer)
 

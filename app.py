@@ -1,594 +1,449 @@
-from flask import Flask, render_template, request
-import os
-import json
-import faiss
-from markupsafe import escape
+import shutil
+import traceback
+from pathlib import Path
+
+from fastapi import (
+    FastAPI,
+    UploadFile,
+    File,
+    Form,
+    HTTPException
+)
+
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 
 from ingestion.document_loader import load_document
 from rag.chunking import chunk_text
-from rag.embeddings import generate_embeddings
-from rag.vector_store import (
-    create_vector_index,
-    save_vector_index,
-    search_vector_index
+
+from rag.chroma_store import (
+    add_documents,
+    search_documents
+)
+
+from llm import generate_answer
+
+
+# ==========================================
+# CREATE FASTAPI APPLICATION
+# ==========================================
+
+app = FastAPI(
+    title="AI Project Intelligence & Risk Advisor",
+    version="1.0.0"
 )
 
 
-app = Flask(__name__)
+# ==========================================
+# CORS CONFIGURATION
+# ==========================================
 
-# =========================================================
-# FOLDERS
-# =========================================================
-
-UPLOAD_FOLDER = "uploads"
-KNOWLEDGE_BASE_FOLDER = "knowledge_base"
-
-app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
-
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-os.makedirs(KNOWLEDGE_BASE_FOLDER, exist_ok=True)
-
-
-# =========================================================
-# KNOWLEDGE BASE FILES
-# =========================================================
-
-INDEX_PATH = "knowledge_base/project_index.faiss"
-CHUNKS_PATH = "knowledge_base/chunks.json"
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173"
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"]
+)
 
 
-# =========================================================
-# HOME
-# =========================================================
+# ==========================================
+# UPLOAD FOLDER
+# ==========================================
 
-@app.route("/")
+UPLOAD_FOLDER = Path("uploads")
+
+UPLOAD_FOLDER.mkdir(
+    parents=True,
+    exist_ok=True
+)
+
+
+# ==========================================
+# REQUEST MODEL
+# ==========================================
+
+class AskRequest(BaseModel):
+
+    project_name: str
+    question: str
+    agent: str
+
+
+# ==========================================
+# HOME ROUTE
+# ==========================================
+
+@app.get("/")
 def home():
 
-    return render_template(
-        "index.html",
-        uploaded_files=[],
-        chunks=[],
-        chunk_count=0,
-        embedding_dimension=384,
-        total_chunks=0,
-        upload_message=None,
-        results=[],
-        question=None
-    )
+    return {
+        "message": "AI Project Intelligence API is running",
+        "status": "success"
+    }
 
 
-# =========================================================
+# ==========================================
 # UPLOAD DOCUMENTS
-# =========================================================
+# ==========================================
 
-@app.route("/upload", methods=["POST"])
-def upload_files():
+@app.post("/api/upload")
+async def upload_documents(
+    project_name: str = Form(...),
+    files: list[UploadFile] = File(...)
+):
 
-    uploaded_files = request.files.getlist("files")
+    try:
 
-    if not uploaded_files:
+        project_name = project_name.strip()
 
-        return render_template(
-            "index.html",
-            uploaded_files=[],
-            chunks=[],
-            chunk_count=0,
-            embedding_dimension=384,
-            total_chunks=0,
-            upload_message="No files selected.",
-            results=[],
-            question=None
+        if not project_name:
+
+            raise HTTPException(
+                status_code=400,
+                detail="Project name is required"
+            )
+
+        if not files:
+
+            raise HTTPException(
+                status_code=400,
+                detail="Please upload at least one file"
+            )
+
+        # Create project folder
+        project_folder = (
+            UPLOAD_FOLDER / project_name
         )
 
-
-    all_new_chunks = []
-
-    uploaded_file_names = []
-
-
-    # -----------------------------------------------------
-    # PROCESS EACH UPLOADED FILE
-    # -----------------------------------------------------
-
-    for uploaded_file in uploaded_files:
-
-        if uploaded_file.filename == "":
-            continue
-
-
-        filename = uploaded_file.filename
-
-        uploaded_file_names.append(filename)
-
-
-        # Save uploaded file
-        file_path = os.path.join(
-            app.config["UPLOAD_FOLDER"],
-            filename
+        project_folder.mkdir(
+            parents=True,
+            exist_ok=True
         )
 
-        uploaded_file.save(file_path)
+        total_chunks = 0
+        uploaded_files = []
 
+        for file in files:
 
-        try:
-
-            # Extract text
-            text = load_document(file_path)
-
-
-            if not text.strip():
+            if not file.filename:
                 continue
 
+            # Prevent unsafe file paths
+            safe_filename = Path(
+                file.filename
+            ).name
 
-            # Create chunks
-            new_chunks = chunk_text(text)
-
-
-            # Store chunk + source
-            for chunk in new_chunks:
-
-                all_new_chunks.append(
-                    {
-                        "text": chunk,
-                        "source": filename
-                    }
-                )
-
-
-        except Exception as error:
-
-            return render_template(
-                "index.html",
-                uploaded_files=uploaded_file_names,
-                chunks=[],
-                chunk_count=0,
-                embedding_dimension=384,
-                total_chunks=0,
-                upload_message=f"Error processing {filename}: {error}",
-                results=[],
-                question=None
+            print(
+                f"\nProcessing file: {safe_filename}"
             )
 
+            # ==================================
+            # SAVE FILE
+            # ==================================
 
-    # -----------------------------------------------------
-    # CHECK CONTENT
-    # -----------------------------------------------------
-
-    if not all_new_chunks:
-
-        return render_template(
-            "index.html",
-            uploaded_files=uploaded_file_names,
-            chunks=[],
-            chunk_count=0,
-            embedding_dimension=384,
-            total_chunks=0,
-            upload_message="No readable text found in the uploaded files.",
-            results=[],
-            question=None
-        )
-
-
-    # =====================================================
-    # LOAD EXISTING KNOWLEDGE BASE
-    # =====================================================
-
-    existing_chunks = []
-
-
-    if os.path.exists(CHUNKS_PATH):
-
-        try:
+            file_path = (
+                project_folder / safe_filename
+            )
 
             with open(
-                CHUNKS_PATH,
-                "r",
-                encoding="utf-8"
-            ) as json_file:
-
-                existing_chunks = json.load(json_file)
-
-        except Exception:
-
-            existing_chunks = []
-
-
-    # =====================================================
-    # CONVERT OLD STRING FORMAT
-    # =====================================================
-
-    normalized_existing_chunks = []
-
-
-    for item in existing_chunks:
-
-        # Old format:
-        # "some chunk text"
-
-        if isinstance(item, str):
-
-            normalized_existing_chunks.append(
-                {
-                    "text": item,
-                    "source": "Previously uploaded document"
-                }
-            )
-
-        # New format:
-        # {"text": "...", "source": "..."}
-        elif isinstance(item, dict):
-
-            normalized_existing_chunks.append(item)
-
-
-    existing_chunks = normalized_existing_chunks
-
-
-    # =====================================================
-    # REMOVE EXACT DUPLICATES
-    # =====================================================
-
-    existing_texts = set(
-        item["text"]
-        for item in existing_chunks
-    )
-
-
-    unique_new_chunks = []
-
-
-    for item in all_new_chunks:
-
-        if item["text"] not in existing_texts:
-
-            unique_new_chunks.append(item)
-
-            existing_texts.add(
-                item["text"]
-            )
-
-
-    # =====================================================
-    # COMBINE KNOWLEDGE BASE
-    # =====================================================
-
-    all_chunks = (
-        existing_chunks +
-        unique_new_chunks
-    )
-
-
-    # =====================================================
-    # GENERATE EMBEDDINGS
-    # =====================================================
-
-    all_texts = [
-        item["text"]
-        for item in all_chunks
-    ]
-
-
-    embeddings = generate_embeddings(
-        all_texts
-    )
-
-
-    # =====================================================
-    # CREATE FAISS INDEX
-    # =====================================================
-
-    index = create_vector_index(
-        embeddings
-    )
-
-
-    # =====================================================
-    # SAVE FAISS INDEX
-    # =====================================================
-
-    save_vector_index(
-        index,
-        INDEX_PATH
-    )
-
-
-    # =====================================================
-    # SAVE CHUNKS
-    # =====================================================
-
-    with open(
-        CHUNKS_PATH,
-        "w",
-        encoding="utf-8"
-    ) as json_file:
-
-        json.dump(
-            all_chunks,
-            json_file,
-            indent=4,
-            ensure_ascii=False
-        )
-
-
-    # =====================================================
-    # EMBEDDING DIMENSION
-    # =====================================================
-
-    embedding_dimension = embeddings.shape[1]
-
-
-    # =====================================================
-    # SUCCESS MESSAGE
-    # =====================================================
-
-    upload_message = (
-        "Document processing completed successfully."
-    )
-
-
-    # =====================================================
-    # SHOW ONLY CURRENT UPLOAD CHUNKS
-    # =====================================================
-
-    current_chunks = unique_new_chunks
-
-
-    # If everything was duplicate, show the uploaded
-    # chunks anyway for demonstration.
-    if not current_chunks:
-
-        current_chunks = all_new_chunks
-
-
-    # =====================================================
-    # RENDER PAGE
-    # =====================================================
-
-    return render_template(
-
-        "index.html",
-
-        uploaded_files=uploaded_file_names,
-
-        chunks=current_chunks,
-
-        chunk_count=len(current_chunks),
-
-        embedding_dimension=embedding_dimension,
-
-        total_chunks=len(all_chunks),
-
-        upload_message=upload_message,
-
-        results=[],
-
-        question=None
-    )
-
-
-# =========================================================
-# ASK QUESTION
-# =========================================================
-
-@app.route("/ask", methods=["POST"])
-def ask_question():
-
-    question = request.form.get(
-        "question",
-        ""
-    ).strip()
-
-
-    if not question:
-
-        return render_template(
-            "index.html",
-            uploaded_files=[],
-            chunks=[],
-            chunk_count=0,
-            embedding_dimension=384,
-            total_chunks=0,
-            upload_message=None,
-            results=[],
-            question=None
-        )
-
-
-    # =====================================================
-    # CHECK KNOWLEDGE BASE
-    # =====================================================
-
-    if not os.path.exists(INDEX_PATH):
-
-        return render_template(
-            "index.html",
-            uploaded_files=[],
-            chunks=[],
-            chunk_count=0,
-            embedding_dimension=384,
-            total_chunks=0,
-            upload_message="Please upload project documents first.",
-            results=[],
-            question=question
-        )
-
-
-    if not os.path.exists(CHUNKS_PATH):
-
-        return render_template(
-            "index.html",
-            uploaded_files=[],
-            chunks=[],
-            chunk_count=0,
-            embedding_dimension=384,
-            total_chunks=0,
-            upload_message="Project knowledge base not found.",
-            results=[],
-            question=question
-        )
-
-
-    # =====================================================
-    # LOAD CHUNKS
-    # =====================================================
-
-    with open(
-        CHUNKS_PATH,
-        "r",
-        encoding="utf-8"
-    ) as json_file:
-
-        stored_chunks = json.load(
-            json_file
-        )
-
-
-    # =====================================================
-    # NORMALIZE OLD CHUNK FORMAT
-    # =====================================================
-
-    chunks = []
-
-
-    for item in stored_chunks:
-
-        if isinstance(item, str):
-
-            chunks.append(
-                {
-                    "text": item,
-                    "source": "Previously uploaded document"
-                }
-            )
-
-        elif isinstance(item, dict):
-
-            chunks.append(item)
-
-
-    # =====================================================
-    # LOAD FAISS
-    # =====================================================
-
-    index = faiss.read_index(
-        INDEX_PATH
-    )
-
-
-    # =====================================================
-    # CREATE QUESTION EMBEDDING
-    # =====================================================
-
-    query_embedding = generate_embeddings(
-        [question]
-    )
-
-
-    # =====================================================
-    # SEARCH VECTOR DATABASE
-    # =====================================================
-
-    distances, indices = search_vector_index(
-
-        index,
-
-        query_embedding,
-
-        top_k=min(5, len(chunks))
-    )
-
-
-    # =====================================================
-    # CREATE SEARCH RESULTS
-    # =====================================================
-
-    results = []
-
-
-    for rank, index_number in enumerate(
-        indices[0],
-        start=1
-    ):
-
-        if index_number == -1:
-            continue
-
-
-        if index_number >= len(chunks):
-            continue
-
-
-        chunk = chunks[index_number]
-
-
-        # Avoid duplicate result text
-        already_exists = any(
-            result["text"] == chunk["text"]
-            for result in results
-        )
-
-
-        if already_exists:
-            continue
-
-
-        results.append(
-            {
-                "rank": rank,
-                "text": chunk["text"],
-                "source": chunk.get(
-                    "source",
-                    "Unknown document"
-                ),
-                "distance": round(
-                    float(
-                        distances[0][rank - 1]
-                    ),
-                    4
+                file_path,
+                "wb"
+            ) as buffer:
+
+                shutil.copyfileobj(
+                    file.file,
+                    buffer
                 )
-            }
+
+            print(
+                f"File saved: {file_path}"
+            )
+
+            # ==================================
+            # LOAD DOCUMENT
+            # ==================================
+
+            text = load_document(
+                str(file_path)
+            )
+
+            print(
+                "Document loaded successfully"
+            )
+
+            if not text or not text.strip():
+
+                print(
+                    f"No text found in {safe_filename}"
+                )
+
+                continue
+
+            # ==================================
+            # CREATE CHUNKS
+            # ==================================
+
+            chunks = chunk_text(text)
+
+            print(
+                f"Chunks created: {len(chunks)}"
+            )
+
+            if not chunks:
+
+                print(
+                    f"No chunks created for {safe_filename}"
+                )
+
+                continue
+
+            # ==================================
+            # CREATE SOURCE NAMES
+            # ==================================
+
+            sources = [
+                f"{project_name}/{safe_filename}"
+                for _ in chunks
+            ]
+
+            # ==================================
+            # STORE DOCUMENTS IN CHROMADB
+            # ==================================
+
+            added_chunks = add_documents(
+                chunks,
+                sources,
+                project_name
+            )
+
+            print(
+                f"Added chunks: {added_chunks}"
+            )
+
+            total_chunks += added_chunks
+
+            uploaded_files.append(
+                safe_filename
+            )
+
+        if not uploaded_files:
+
+            raise HTTPException(
+                status_code=400,
+                detail="No valid documents were uploaded"
+            )
+
+        return {
+
+            "message": "Documents uploaded successfully",
+
+            "project_name": project_name,
+
+            "files": uploaded_files,
+
+            "total_chunks": total_chunks
+
+        }
+
+    except HTTPException:
+
+        raise
+
+    except Exception as error:
+
+        print("\nUPLOAD ERROR")
+
+        print(
+            f"Error message: {str(error)}"
+        )
+
+        traceback.print_exc()
+
+        raise HTTPException(
+            status_code=500,
+            detail=f"Upload failed: {str(error)}"
         )
 
 
-    # =====================================================
-    # TOTAL CHUNKS
-    # =====================================================
+# ==========================================
+# ASK QUESTION
+# ==========================================
 
-    total_chunks = len(chunks)
+@app.post("/api/ask")
+async def ask_question(
+    request: AskRequest
+):
+
+    try:
+
+        project_name = request.project_name.strip()
+        question = request.question.strip()
+
+        print(
+            f"\nProject: {project_name}"
+        )
+
+        print(
+            f"Question: {question}"
+        )
+
+        if not project_name:
+
+            raise HTTPException(
+                status_code=400,
+                detail="Project name is required"
+            )
+
+        if not question:
+
+            raise HTTPException(
+                status_code=400,
+                detail="Question is required"
+            )
+
+        # ==================================
+        # SEARCH CHROMADB
+        # ==================================
+
+        results = search_documents(
+            question,
+            project_name,
+            top_k=5
+        )
+
+        if not results:
+
+            return {
+
+                "project_name": project_name,
+
+                "question": question,
+
+                "agent": request.agent,
+
+                "answer": (
+                    "I could not find this information "
+                    "in the uploaded project documents."
+                )
+
+            }
+
+        # ==================================
+        # EXTRACT DOCUMENTS FROM CHROMADB
+        # ==================================
+
+        documents = results.get(
+            "documents",
+            []
+        )
+
+        # ChromaDB returns nested documents:
+        # [["chunk 1", "chunk 2", "chunk 3"]]
+
+        if documents and isinstance(
+            documents[0],
+            list
+        ):
+
+            documents = documents[0]
+
+        if not documents:
+
+            return {
+
+                "project_name": project_name,
+
+                "question": question,
+
+                "agent": request.agent,
+
+                "answer": (
+                    "I could not find relevant information "
+                    "in the uploaded documents."
+                )
+
+            }
+
+        # ==================================
+        # PREPARE CONTEXT
+        # ==================================
+
+        context = "\n\n".join(
+            str(document)
+            for document in documents
+            if document
+        )
+
+        print(
+            "\nRelevant context retrieved successfully"
+        )
+
+        print(
+            f"Context length: {len(context)} characters"
+        )
+
+        # ==================================
+        # GENERATE GEMINI ANSWER
+        # ==================================
+
+        answer = generate_answer(
+            question,
+            context
+        )
+
+        if not answer:
+
+            answer = (
+                "Unable to generate an answer "
+                "from the uploaded documents."
+            )
+
+        return {
+
+            "project_name": project_name,
+
+            "question": question,
+
+            "agent": request.agent,
+
+            "answer": answer
+
+        }
+
+    except HTTPException:
+
+        raise
+
+    except Exception as error:
+
+        print("\nQUESTION ERROR")
+
+        print(
+            f"Error message: {str(error)}"
+        )
+
+        traceback.print_exc()
+
+        raise HTTPException(
+            status_code=500,
+            detail=f"Question failed: {str(error)}"
+        )
 
 
-    # =====================================================
-    # RENDER RESULTS
-    # =====================================================
-
-    return render_template(
-
-        "index.html",
-
-        uploaded_files=[],
-
-        chunks=[],
-
-        chunk_count=0,
-
-        embedding_dimension=384,
-
-        total_chunks=total_chunks,
-
-        upload_message=None,
-
-        results=results,
-
-        question=question
-    )
-
-
-# =========================================================
+# ==========================================
 # RUN APPLICATION
-# =========================================================
+# ==========================================
 
 if __name__ == "__main__":
 
-    app.run(
-        debug=True
+    import uvicorn
+
+    uvicorn.run(
+        "app:app",
+        host="0.0.0.0",
+        port=5000,
+        reload=True
     )
