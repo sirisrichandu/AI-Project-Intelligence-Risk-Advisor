@@ -1,7 +1,6 @@
 import os
 import time
 import traceback
-import json
 
 from dotenv import load_dotenv
 from google import genai
@@ -41,10 +40,14 @@ FALLBACK_MODEL = "gemini-3.7-flash"
 
 
 # ==========================================================
-# HELPER: TEMPORARY ERROR
+# ERROR HELPERS
 # ==========================================================
 
-def is_temporary_error(error):
+def is_503_error(error):
+    """
+    503 means the model is temporarily unavailable,
+    usually because of high demand.
+    """
 
     error_text = str(error).lower()
 
@@ -52,15 +55,47 @@ def is_temporary_error(error):
         "503" in error_text
         or "unavailable" in error_text
         or "high demand" in error_text
-        or "temporarily" in error_text
         or "overloaded" in error_text
-        or "429" in error_text
+        or "temporarily unavailable" in error_text
+    )
+
+
+def is_429_error(error):
+    """
+    Detect Gemini rate-limit/quota errors.
+    """
+
+    error_text = str(error).lower()
+
+    return (
+        "429" in error_text
+        or "resource_exhausted" in error_text
         or "rate limit" in error_text
+        or "quota exceeded" in error_text
+    )
+
+
+def is_daily_quota_error(error):
+    """
+    Detect a daily/free-tier quota exhaustion.
+
+    This type of 429 should NOT be retried repeatedly.
+    """
+
+    error_text = str(error).lower()
+
+    return (
+        "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+        in error_text
+        or "perday" in error_text
+        or "per_day" in error_text
+        or "generaterequestsperday" in error_text
+        or "quota exceeded for metric" in error_text
     )
 
 
 # ==========================================================
-# HELPER: CLEAN RESPONSE
+# CLEAN RESPONSE
 # ==========================================================
 
 def clean_response(text):
@@ -70,7 +105,7 @@ def clean_response(text):
 
     text = text.strip()
 
-    # Remove markdown code fences
+    # Remove markdown JSON fences
     if text.startswith("```json"):
         text = text[7:].strip()
 
@@ -80,24 +115,7 @@ def clean_response(text):
     if text.endswith("```"):
         text = text[:-3].strip()
 
-    return text.strip()
-
-
-# ==========================================================
-# HELPER: CHECK VALID JSON
-# ==========================================================
-
-def is_valid_json(text):
-
-    if not text:
-        return False
-
-    try:
-        json.loads(text)
-        return True
-
-    except (json.JSONDecodeError, TypeError):
-        return False
+    return text
 
 
 # ==========================================================
@@ -113,28 +131,38 @@ def generate_answer(
     """
     Generate an answer using Gemini.
 
-    json_mode=True is used by structured agents:
-        - Scope Extraction Agent
-        - Risk Detection Agent
-        - Blocker & Action Item Agent
-        - Documentation Agent
+    Supports:
+    - Normal RAG questions
+    - JSON responses for agents
+    - 503 retry handling
+    - 429 quota handling
+    - Primary/fallback model handling
     """
 
     question = str(question).strip()
     context = str(context).strip()
 
+    # ------------------------------------------------------
+    # VALIDATE INPUT
+    # ------------------------------------------------------
+
     if not question:
+
         return "Please provide a valid question."
 
     if not context:
+
+        if json_mode:
+            return '{"error": "No project context was provided."}'
+
         return (
             "I could not find relevant information "
             "in the uploaded project documents."
         )
 
-    # ======================================================
+    # ------------------------------------------------------
     # LIMIT CONTEXT
-    # ======================================================
+    # ------------------------------------------------------
 
     max_context_length = 12000
 
@@ -143,12 +171,12 @@ def generate_answer(
         context = context[:max_context_length]
 
         print(
-            "Warning: Project context was truncated "
-            "to 12000 characters."
+            f"Context truncated to "
+            f"{max_context_length} characters."
         )
 
     # ======================================================
-    # CREATE PROMPT
+    # BUILD PROMPT
     # ======================================================
 
     if json_mode:
@@ -160,26 +188,17 @@ Analyze ONLY the project context provided below.
 
 {question}
 
-STRICT JSON REQUIREMENTS:
+STRICT JSON RULES:
 
-1. Return ONLY valid JSON.
-2. Do NOT use markdown.
-3. Do NOT use ```json.
-4. Do NOT add explanations.
-5. Do NOT add text before the JSON.
-6. Do NOT add text after the JSON.
-7. Return the COMPLETE JSON object.
-8. Do NOT stop before completing the JSON.
-9. Make sure every opening {{ has a matching }}.
-10. Make sure every opening [ has a matching ].
-11. Make sure every JSON string is properly closed.
-12. Do not leave trailing commas.
-13. Keep the JSON compact.
-14. Follow the exact JSON structure requested.
-15. Use "" for unavailable string values.
-16. Use [] for unavailable list values.
-17. Do not invent information.
-18. Use ONLY information supported by the project context.
+- Return ONLY valid JSON.
+- Do NOT use markdown.
+- Do NOT use ```json.
+- Do NOT add explanations before or after the JSON.
+- Do NOT truncate the response.
+- Follow the exact JSON structure requested in the instructions.
+- Use empty strings or empty arrays when information is unavailable.
+- Do not invent information.
+- Use only information supported by the project context.
 
 PROJECT CONTEXT:
 {context}
@@ -218,7 +237,7 @@ Provide a clear and concise answer.
     ]
 
     # ======================================================
-    # TRY MODELS
+    # MODEL LOOP
     # ======================================================
 
     for model_index, model_name in enumerate(models):
@@ -227,10 +246,11 @@ Provide a clear and concise answer.
             f"\nUsing Gemini model: {model_name}"
         )
 
-        for attempt in range(
-            1,
-            max_retries + 1
-        ):
+        # --------------------------------------------------
+        # RETRY LOOP
+        # --------------------------------------------------
+
+        for attempt in range(1, max_retries + 1):
 
             try:
 
@@ -239,48 +259,38 @@ Provide a clear and concise answer.
                     f"(attempt {attempt}/{max_retries})..."
                 )
 
-                # ==================================================
+                # ==========================================
                 # CONFIGURATION
-                # ==================================================
+                # ==========================================
 
                 if json_mode:
 
                     config = types.GenerateContentConfig(
-
-                        temperature=0.0,
-
-                        # Increased from 2000
-                        max_output_tokens=4000,
-
-                        # Force JSON response
+                        temperature=0.1,
+                        max_output_tokens=2500,
                         response_mime_type="application/json"
                     )
 
                 else:
 
                     config = types.GenerateContentConfig(
-
                         temperature=0.2,
-
                         max_output_tokens=700
                     )
 
-                # ==================================================
+                # ==========================================
                 # GEMINI REQUEST
-                # ==================================================
+                # ==========================================
 
                 response = client.models.generate_content(
-
                     model=model_name,
-
                     contents=prompt,
-
                     config=config
                 )
 
-                # ==================================================
-                # CHECK RESPONSE
-                # ==================================================
+                # ==========================================
+                # EMPTY RESPONSE
+                # ==========================================
 
                 if response is None:
 
@@ -288,9 +298,9 @@ Provide a clear and concise answer.
                         "Gemini returned an empty response."
                     )
 
-                # ==================================================
-                # EXTRACT TEXT
-                # ==================================================
+                # ==========================================
+                # GET RESPONSE TEXT
+                # ==========================================
 
                 answer = getattr(
                     response,
@@ -298,70 +308,25 @@ Provide a clear and concise answer.
                     None
                 )
 
-                if not answer:
+                if answer:
+
+                    answer = clean_response(answer)
 
                     print(
                         f"{model_name} returned "
-                        "an empty response."
+                        f"a valid response."
                     )
 
-                    continue
-
-                answer = clean_response(answer)
-
-                # ==================================================
-                # JSON VALIDATION
-                # ==================================================
-
-                if json_mode:
-
-                    if not is_valid_json(answer):
-
-                        print(
-                            f"\n{model_name} returned "
-                            "INVALID JSON."
-                        )
-
-                        print(
-                            "\nRaw response:"
-                        )
-
-                        print(answer)
-
-                        # Retry because malformed JSON
-                        if attempt < max_retries:
-
-                            print(
-                                "\nRetrying because "
-                                "JSON was invalid..."
-                            )
-
-                            time.sleep(1)
-
-                            continue
-
-                        # Try fallback model
-                        print(
-                            f"\n{model_name} failed "
-                            "to produce valid JSON."
-                        )
-
-                        break
-
-                # ==================================================
-                # SUCCESS
-                # ==================================================
+                    return answer
 
                 print(
                     f"{model_name} returned "
-                    "a valid response."
+                    f"an empty response."
                 )
 
-                return answer
-
-            # ======================================================
+            # ==================================================
             # ERROR HANDLING
-            # ======================================================
+            # ==================================================
 
             except Exception as error:
 
@@ -371,10 +336,45 @@ Provide a clear and concise answer.
                 )
 
                 # ==================================================
-                # TEMPORARY ERROR
+                # 1. DAILY QUOTA EXHAUSTED
                 # ==================================================
 
-                if is_temporary_error(error):
+                if is_daily_quota_error(error):
+
+                    print(
+                        "\nGemini daily/free-tier quota "
+                        "has been exhausted."
+                    )
+
+                    print(
+                        "Stopping retries for this model."
+                    )
+
+                    # IMPORTANT:
+                    # Do NOT retry 3 times.
+                    # Do NOT immediately hammer fallback
+                    # with the same exhausted quota.
+
+                    if json_mode:
+
+                        return (
+                            '{"error": "Gemini daily quota '
+                            'has been exhausted. Please try '
+                            'again after the quota resets or '
+                            'use another available API/model."}'
+                        )
+
+                    return (
+                        "Gemini daily quota has been exhausted. "
+                        "Please try again after the quota resets "
+                        "or use another available API/model."
+                    )
+
+                # ==================================================
+                # 2. 503 HIGH DEMAND
+                # ==================================================
+
+                if is_503_error(error):
 
                     if attempt < max_retries:
 
@@ -382,8 +382,7 @@ Provide a clear and concise answer.
 
                         print(
                             f"Temporary Gemini error. "
-                            f"Retrying in "
-                            f"{wait_time} seconds..."
+                            f"Retrying in {wait_time} seconds..."
                         )
 
                         time.sleep(wait_time)
@@ -395,19 +394,55 @@ Provide a clear and concise answer.
                         f"{max_retries} attempts."
                     )
 
+                    # Move to fallback model
                     break
 
                 # ==================================================
-                # OTHER ERROR
+                # 3. 429 RATE LIMIT
                 # ==================================================
+
+                if is_429_error(error):
+
+                    # A normal short-term rate limit may recover.
+                    if attempt < max_retries:
+
+                        wait_time = min(
+                            2 ** attempt,
+                            10
+                        )
+
+                        print(
+                            f"Temporary rate limit. "
+                            f"Retrying in {wait_time} seconds..."
+                        )
+
+                        time.sleep(wait_time)
+
+                        continue
+
+                    print(
+                        f"{model_name} rate limit "
+                        f"persisted after {max_retries} attempts."
+                    )
+
+                    break
+
+                # ==================================================
+                # 4. OTHER ERROR
+                # ==================================================
+
+                print(
+                    "Unexpected Gemini error."
+                )
 
                 traceback.print_exc()
 
+                # Move to fallback model
                 break
 
-        # ==========================================================
-        # FALLBACK MODEL
-        # ==========================================================
+        # ======================================================
+        # MOVE TO FALLBACK MODEL
+        # ======================================================
 
         if model_index < len(models) - 1:
 
@@ -428,12 +463,10 @@ Provide a clear and concise answer.
 
     if json_mode:
 
-        return json.dumps({
-            "error": (
-                "Gemini could not generate "
-                "a valid JSON response."
-            )
-        })
+        return (
+            '{"error": "Gemini could not generate a response '
+            'at this time."}'
+        )
 
     return (
         "The AI service is temporarily unavailable. "

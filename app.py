@@ -28,6 +28,7 @@ from agents.scope_extraction_agent import extract_scope
 from agents.risk_detection_agent import detect_risks
 from agents.blocker_action_agent import identify_blockers_and_actions
 from agents.documentation_agent import generate_documentation
+from agents.health_scoring import calculate_project_health
 
 
 # ============================================================
@@ -447,6 +448,40 @@ async def ask_question(
                 "result": blocker_result
 
             }
+        # ====================================================
+        # PROJECT HEALTH SCORING
+        # ====================================================
+
+        if agent == "Project Health Scoring":
+
+            print(
+            "\nRunning Project Health Scoring..."
+            )
+
+            scope_result = extract_scope(
+                context
+            )
+
+            risk_result = detect_risks(
+                context
+            )
+
+            blocker_result = identify_blockers_and_actions(
+                context
+            )
+
+            health_result = calculate_project_health(
+                scope_result,
+                risk_result,
+                blocker_result
+            )
+
+            return {
+                "project_name": project_name,
+                "question": question,
+                "agent": agent,
+                "result": health_result
+            }
 
         # ====================================================
         # AUTO ROUTING
@@ -471,7 +506,8 @@ Available agents:
 2. Risk Detection Agent
 3. Blocker & Action Item Agent
 4. Documentation Agent
-5. General Project Assistant
+5. Project Health Scoring
+6. General Project Assistant
 
 Rules:
 
@@ -486,6 +522,10 @@ Rules:
 
 - User stories, risk register, project documentation,
   structured documentation → Documentation Agent
+
+- Project health, health score, project status,
+  scope clarity, timeline risk, blocker count
+  → Project Health Scoring
 
 - General project questions → General Project Assistant
 
@@ -534,13 +574,19 @@ User Question:
             elif "Documentation" in routed_agent:
 
                 routed_agent = (
-                    "Documentation Agent"
+                      "Documentation Agent"
+                )
+
+            elif "Health" in routed_agent:
+
+                routed_agent = (
+                        "Project Health Scoring"
                 )
 
             else:
 
                 routed_agent = (
-                    "General Project Assistant"
+                        "General Project Assistant"
                 )
 
             # ------------------------------------------------
@@ -590,6 +636,32 @@ User Question:
 
                 result = generate_documentation(
                     context
+                )
+
+                return {
+                    "project_name": project_name,
+                    "question": question,
+                    "agent": routed_agent,
+                    "result": result
+                }
+            elif routed_agent == "Project Health Scoring":
+
+                scope_result = extract_scope(
+                    context
+                )
+
+                risk_result = detect_risks(
+                    context
+                )
+
+                blocker_result = identify_blockers_and_actions(
+                    context
+                )
+
+                result = calculate_project_health(
+                    scope_result,
+                    risk_result,
+                    blocker_result
                 )
 
                 return {
