@@ -1,104 +1,280 @@
 import json
+import re
 from llm import generate_answer
 
 
+# ==========================================================
+# CLEAN GEMINI RESPONSE
+# ==========================================================
+
+def _clean_json_response(answer):
+    if not answer:
+        return ""
+
+    answer = answer.strip()
+
+    # Remove markdown fences
+    answer = re.sub(
+        r"^```json\s*",
+        "",
+        answer,
+        flags=re.IGNORECASE
+    )
+
+    answer = re.sub(
+        r"^```\s*",
+        "",
+        answer
+    )
+
+    answer = re.sub(
+        r"\s*```$",
+        "",
+        answer
+    )
+
+    answer = answer.strip()
+
+    # Extract JSON object
+    start = answer.find("{")
+    end = answer.rfind("}")
+
+    if start != -1 and end != -1 and end > start:
+        answer = answer[start:end + 1]
+
+    return answer.strip()
+
+
+# ==========================================================
+# EMPTY RESULT
+# ==========================================================
+
+def _empty_result():
+
+    return {
+        "project_goal": "",
+        "project_scope": {
+            "included": [],
+            "excluded": []
+        },
+        "deliverables": [],
+        "milestones": [],
+        "timelines": [],
+        "responsibilities": []
+    }
+
+
+# ==========================================================
+# NORMALIZE RESULT
+# ==========================================================
+
+def _normalize_result(result):
+
+    if not isinstance(result, dict):
+        return _empty_result()
+
+    # Project goal
+    if not isinstance(
+        result.get("project_goal", ""),
+        str
+    ):
+        result["project_goal"] = ""
+
+    # Project scope
+    project_scope = result.get(
+        "project_scope",
+        {}
+    )
+
+    if not isinstance(project_scope, dict):
+        project_scope = {}
+
+    included = project_scope.get(
+        "included",
+        []
+    )
+
+    excluded = project_scope.get(
+        "excluded",
+        []
+    )
+
+    if not isinstance(included, list):
+        included = []
+
+    if not isinstance(excluded, list):
+        excluded = []
+
+    result["project_scope"] = {
+        "included": included,
+        "excluded": excluded
+    }
+
+    # Lists
+    for field in [
+        "deliverables",
+        "milestones",
+        "timelines",
+        "responsibilities"
+    ]:
+
+        if not isinstance(
+            result.get(field, []),
+            list
+        ):
+            result[field] = []
+
+    return result
+
+
+# ==========================================================
+# SCOPE EXTRACTION AGENT
+# ==========================================================
+
 def extract_scope(context):
 
+    if not context or not context.strip():
+
+        result = _empty_result()
+
+        result["raw_response"] = (
+            "No project context was provided."
+        )
+
+        return result
+
+    # ======================================================
+    # PROMPT
+    # ======================================================
+
     question = """
-You are the Scope and Deliverable Extraction Agent.
+You are the Scope Extraction Agent for an AI Project
+Intelligence and Risk Advisor.
 
-Analyze ONLY the project context provided below.
+Analyze ONLY the project context provided to you.
 
-Your task is to extract structured project information.
+Your task is to extract structured project scope information.
 
-==================================================
+Do NOT use outside knowledge.
+Do NOT invent information.
+Do NOT assume missing information.
+
+--------------------------------------------------
 1. PROJECT GOAL
-==================================================
-Extract the main desired outcome of the project.
+--------------------------------------------------
 
-==================================================
+Extract the main goal of the project.
+
+If not explicitly available, use:
+
+""
+
+--------------------------------------------------
 2. PROJECT SCOPE
-==================================================
-Extract:
-- included: work/features explicitly included in the project
-- excluded: work/features explicitly excluded from the project
+--------------------------------------------------
 
-Do not invent included or excluded items.
+Extract explicitly included project work, features,
+activities, and components.
 
-==================================================
-3. MAJOR DELIVERABLES
-==================================================
-Extract major outputs that the project must produce.
+Extract explicitly excluded project work, features,
+activities, and components.
 
-Do NOT confuse a deliverable with a milestone.
+IMPORTANT:
 
-==================================================
+Only include something in "excluded" if the context
+explicitly says it is out of scope, excluded, or not
+part of the project.
+
+--------------------------------------------------
+3. DELIVERABLES
+--------------------------------------------------
+
+Extract major project outputs explicitly supported
+by the context.
+
+Examples include:
+
+- application
+- API
+- dashboard
+- documentation
+- report
+- model
+- prototype
+
+Do not invent deliverables.
+
+--------------------------------------------------
 4. MILESTONES
-==================================================
-A milestone is a project checkpoint or stage.
+--------------------------------------------------
 
-If a milestone table exists, extract EVERY row.
+Extract milestones or project checkpoints explicitly
+mentioned in the context.
 
-For every milestone extract:
+For each milestone return:
+
 - name
 - target_date
 - responsible_team
 - status
 
-Preserve the information exactly as given.
+If a value is unavailable, use "".
 
-==================================================
+--------------------------------------------------
 5. TIMELINES
-==================================================
-Extract milestone and its corresponding date.
+--------------------------------------------------
 
-==================================================
-6. RESPONSIBILITIES
-==================================================
-Extract explicit statements describing what a person or team
-is responsible for doing.
+Extract explicit milestone/date relationships.
 
-Examples:
-
-"Backend Team is responsible for API development."
-
-"Frontend Team will integrate the APIs."
-
-"QA Team is responsible for system testing."
-
-"AI Team will implement the risk detection agent."
-
-Convert them into:
+For example:
 
 {
-    "team": "Backend Team",
-    "responsibility": "API development"
+    "milestone": "Milestone 1",
+    "date": "September 15, 2026"
 }
 
-IMPORTANT:
-- Extract responsibilities ONLY when the context explicitly
-  states or clearly describes who is responsible for what.
-- Do NOT invent responsibilities.
-- Do NOT assume a team's responsibility only from its name.
-- A responsible_team in a milestone table can be used as a
-  responsibility ONLY if the context also indicates what that
-  team is responsible for doing.
-- Do NOT use outside knowledge.
+Do not invent dates.
 
-==================================================
-STRICT GROUNDING RULES
-==================================================
-- Use ONLY the provided project context.
-- Do NOT invent information.
-- Preserve dates, team names, and status exactly as given.
-- If information is not available, return an empty list or
-  empty string.
-- If a field cannot be supported by the context, do not guess.
-- Return ONLY valid JSON.
-- Do NOT use markdown fences.
-- Do NOT add explanations.
+--------------------------------------------------
+6. RESPONSIBILITIES
+--------------------------------------------------
 
-Return EXACTLY this structure:
+Extract explicit team/person responsibilities.
+
+For example, if the context says:
+
+"Frontend team is responsible for UI development."
+
+return:
+
+{
+    "team": "Frontend team",
+    "responsibility": "UI development"
+}
+
+Do NOT infer responsibilities only from team names.
+
+--------------------------------------------------
+GROUNDING RULES
+--------------------------------------------------
+
+1. Use ONLY the supplied project context.
+2. Do NOT use outside knowledge.
+3. Do NOT invent project information.
+4. Do NOT invent dates.
+5. Do NOT invent teams.
+6. Do NOT invent responsibilities.
+7. Do NOT invent milestones.
+8. Preserve information from the context.
+9. Use "" when a single value is unavailable.
+10. Use [] when a list has no supported information.
+11. Return ONLY valid JSON.
+12. Do NOT use markdown.
+13. Do NOT add explanations.
+
+--------------------------------------------------
+REQUIRED JSON FORMAT
+--------------------------------------------------
 
 {
     "project_goal": "",
@@ -130,31 +306,84 @@ Return EXACTLY this structure:
 }
 """
 
-    answer = generate_answer(question, context)
-
-    answer = answer.strip()
-
-    if answer.startswith("```json"):
-        answer = answer[7:].strip()
-    elif answer.startswith("```"):
-        answer = answer[3:].strip()
-
-    if answer.endswith("```"):
-        answer = answer[:-3].strip()
+    # ======================================================
+    # CALL GEMINI
+    # ======================================================
 
     try:
-        return json.loads(answer)
 
-    except json.JSONDecodeError:
-        return {
-            "project_goal": "",
-            "project_scope": {
-                "included": [],
-                "excluded": []
-            },
-            "deliverables": [],
-            "milestones": [],
-            "timelines": [],
-            "responsibilities": [],
-            "raw_response": answer
-        }
+        print("Running Scope Extraction Agent...")
+
+        answer = generate_answer(
+            question,
+            context,
+            json_mode=True
+        )
+
+        cleaned_answer = _clean_json_response(answer)
+
+        if not cleaned_answer:
+
+            result = _empty_result()
+
+            result["raw_response"] = (
+                "The model returned an empty response."
+            )
+
+            return result
+
+        # ==================================================
+        # PARSE JSON
+        # ==================================================
+
+        try:
+
+            result = json.loads(
+                cleaned_answer
+            )
+
+        except json.JSONDecodeError as error:
+
+            print(
+                "\nScope Agent JSON parsing failed:"
+            )
+
+            print(error)
+
+            print(
+                "\nRaw model response:"
+            )
+
+            print(answer)
+
+            result = _empty_result()
+
+            result["raw_response"] = answer
+
+            return result
+
+        # ==================================================
+        # NORMALIZE
+        # ==================================================
+
+        result = _normalize_result(result)
+
+        print(
+            "Scope Extraction completed successfully."
+        )
+
+        return result
+
+    except Exception as error:
+
+        print(
+            "\nScope Extraction Agent error:"
+        )
+
+        print(error)
+
+        result = _empty_result()
+
+        result["raw_response"] = str(error)
+
+        return result

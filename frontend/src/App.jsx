@@ -1,40 +1,50 @@
-
 import { useState } from "react";
 import "./App.css";
+
+import ScopeResult from "./components/ScopeResult";
+import RiskResult from "./components/RiskResult";
+import BlockerResult from "./components/BlockerResult";
+import DocumentationResult from "./components/DocumentationResult";
+import GeneralResult from "./components/GeneralResult";
 
 const API_URL = "http://localhost:5000";
 
 function App() {
   const [projectName, setProjectName] = useState("");
   const [files, setFiles] = useState([]);
+
   const [agent, setAgent] = useState("Auto Routing");
   const [question, setQuestion] = useState("");
 
-  const [uploadMessage, setUploadMessage] = useState("");
+  const [agentResult, setAgentResult] = useState(null);
   const [answer, setAnswer] = useState("");
+
+  const [uploadMessage, setUploadMessage] = useState("");
 
   const [uploading, setUploading] = useState(false);
   const [asking, setAsking] = useState(false);
 
   const [error, setError] = useState("");
 
-  // -----------------------------
-  // Handle File Selection
-  // -----------------------------
+  // =========================================================
+  // HANDLE FILE SELECTION
+  // =========================================================
+
   const handleFileChange = (event) => {
     setFiles(Array.from(event.target.files));
-
     setUploadMessage("");
     setError("");
   };
 
-  // -----------------------------
-  // Upload Documents
-  // -----------------------------
+  // =========================================================
+  // UPLOAD DOCUMENTS
+  // =========================================================
+
   const handleUpload = async () => {
     setError("");
     setUploadMessage("");
     setAnswer("");
+    setAgentResult(null);
 
     if (!projectName.trim()) {
       setError("Please enter a project name.");
@@ -64,7 +74,7 @@ function App() {
         `${API_URL}/api/upload`,
         {
           method: "POST",
-          body: formData
+          body: formData,
         }
       );
 
@@ -93,12 +103,14 @@ function App() {
     }
   };
 
-  // -----------------------------
-  // Ask Question
-  // -----------------------------
+  // =========================================================
+  // ASK QUESTION
+  // =========================================================
+
   const handleAskQuestion = async () => {
     setError("");
     setAnswer("");
+    setAgentResult(null);
 
     if (!projectName.trim()) {
       setError(
@@ -121,18 +133,20 @@ function App() {
           method: "POST",
 
           headers: {
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
           },
 
           body: JSON.stringify({
             project_name: projectName.trim(),
             question: question.trim(),
-            agent: agent
-          })
+            agent: agent,
+          }),
         }
       );
 
       const data = await response.json();
+
+      console.log("Backend response:", data);
 
       if (!response.ok) {
         throw new Error(
@@ -140,12 +154,25 @@ function App() {
         );
       }
 
-      setAnswer(
-        data.answer ||
-        data.response ||
-        data.message ||
-        "No answer received."
-      );
+      // =====================================================
+      // HANDLE AGENT RESULT
+      // =====================================================
+
+      if (data.result !== undefined) {
+        setAgentResult(data.result);
+      }
+
+      if (data.answer !== undefined) {
+        setAnswer(data.answer);
+      }
+
+      // Support structured result returned directly
+      if (
+        data.result === undefined &&
+        data.answer === undefined
+      ) {
+        setAgentResult(data);
+      }
 
     } catch (error) {
       console.error("Question error:", error);
@@ -159,11 +186,104 @@ function App() {
     }
   };
 
+  // =========================================================
+  // RENDER AGENT RESULT
+  // =========================================================
+
+  const renderAgentResult = () => {
+    if (!agentResult) {
+      return null;
+    }
+
+    // -------------------------------------------------------
+    // Scope Extraction Agent
+    // -------------------------------------------------------
+
+    if (
+      agent === "Scope Extraction Agent" ||
+      agentResult.project_goal !== undefined
+    ) {
+      return (
+        <ScopeResult
+          data={agentResult}
+        />
+      );
+    }
+
+    // -------------------------------------------------------
+    // Risk Detection Agent
+    // -------------------------------------------------------
+
+    if (
+      agent === "Risk Detection Agent" ||
+      agentResult.risks !== undefined
+    ) {
+      return (
+        <RiskResult
+          data={agentResult}
+        />
+      );
+    }
+
+    // -------------------------------------------------------
+    // Blocker & Action Item Agent
+    // -------------------------------------------------------
+
+    if (
+      agent === "Blocker & Action Item Agent" ||
+      agentResult.blockers !== undefined ||
+      (
+        agentResult.action_items !== undefined &&
+        agentResult.pending_decisions !== undefined
+      )
+    ) {
+      return (
+        <BlockerResult
+          data={agentResult}
+        />
+      );
+    }
+
+    // -------------------------------------------------------
+    // Documentation Agent
+    // -------------------------------------------------------
+
+    if (
+      agent === "Documentation Agent" ||
+      agentResult.user_stories !== undefined ||
+      agentResult.risk_register !== undefined
+    ) {
+      return (
+        <DocumentationResult
+          data={agentResult}
+        />
+      );
+    }
+
+    // -------------------------------------------------------
+    // General / Auto Routing fallback
+    // -------------------------------------------------------
+
+    return (
+      <GeneralResult
+        data={agentResult}
+      />
+    );
+  };
+
+  // =========================================================
+  // UI
+  // =========================================================
+
   return (
     <div className="app">
 
-      {/* Header */}
+      {/* =====================================================
+          HEADER
+      ===================================================== */}
+
       <header className="header">
+
         <h1>
           AI Project Intelligence & Risk Advisor
         </h1>
@@ -171,27 +291,33 @@ function App() {
         <p>
           Analyze your project documents using AI
         </p>
+
       </header>
 
 
-      {/* Upload Section */}
+      {/* =====================================================
+          UPLOAD SECTION
+      ===================================================== */}
+
       <section className="card">
 
-        <h2>📁 Upload Project Documents</h2>
+        <h2>
+          📁 Upload Project Documents
+        </h2>
 
         <p>
           Upload PDF, DOCX, CSV, or TXT files
         </p>
 
-
         {/* Project Name */}
+
         <label>
           Project Name
         </label>
 
         <input
           type="text"
-          placeholder="Enter project name (e.g., Edurag)"
+          placeholder="Enter project name (e.g., EduRAG)"
           value={projectName}
           onChange={(event) =>
             setProjectName(event.target.value)
@@ -200,6 +326,7 @@ function App() {
 
 
         {/* File Input */}
+
         <label>
           Select Documents
         </label>
@@ -213,55 +340,76 @@ function App() {
 
 
         {/* Selected Files */}
+
         {files.length > 0 && (
+
           <div className="file-list">
 
-            <h4>Selected Files:</h4>
+            <h4>
+              Selected Files:
+            </h4>
 
             <ul>
+
               {files.map((file, index) => (
+
                 <li key={index}>
                   {file.name}
                 </li>
+
               ))}
+
             </ul>
 
           </div>
+
         )}
 
 
         {/* Upload Button */}
+
         <button
           onClick={handleUpload}
           disabled={uploading}
         >
+
           {uploading
             ? "Uploading..."
             : "Upload Documents"}
+
         </button>
 
 
         {/* Upload Message */}
+
         {uploadMessage && (
+
           <div className="success-message">
             {uploadMessage}
           </div>
+
         )}
 
       </section>
 
 
-      {/* Question Section */}
+      {/* =====================================================
+          PROJECT ASSISTANT
+      ===================================================== */}
+
       <section className="card">
 
-        <h2>🤖 Ask Your Project Assistant</h2>
+        <h2>
+          🤖 Ask Your Project Assistant
+        </h2>
 
         <p>
-          Get answers from your uploaded documents
+          Select an agent and analyze your project documents
         </p>
 
 
-        {/* Project Name Display */}
+        {/* Project Name */}
+
         <label>
           Project Name
         </label>
@@ -277,16 +425,25 @@ function App() {
 
 
         {/* Agent */}
+
         <label>
           Agent
         </label>
 
         <select
           value={agent}
-          onChange={(event) =>
-            setAgent(event.target.value)
-          }
+          onChange={(event) => {
+
+            setAgent(event.target.value);
+
+            // Clear previous result
+            setAgentResult(null);
+            setAnswer("");
+            setError("");
+
+          }}
         >
+
           <option value="Auto Routing">
             Auto Routing
           </option>
@@ -302,10 +459,16 @@ function App() {
           <option value="Blocker & Action Item Agent">
             Blocker & Action Item Agent
           </option>
+
+          <option value="Documentation Agent">
+            Documentation Agent
+          </option>
+
         </select>
 
 
         {/* Question */}
+
         <label>
           Question
         </label>
@@ -321,53 +484,107 @@ function App() {
 
 
         {/* Ask Button */}
+
         <button
           onClick={handleAskQuestion}
           disabled={asking}
         >
+
           {asking
-            ? "Loading..."
+            ? "Analyzing..."
             : "Ask Question"}
+
         </button>
 
       </section>
 
 
-      {/* Error Message */}
+      {/* =====================================================
+          ERROR
+      ===================================================== */}
+
       {error && (
+
         <div className="error-message">
           {error}
         </div>
+
       )}
 
 
-      {/* AI Response */}
-      <section className="card">
+      {/* =====================================================
+          STRUCTURED AGENT RESULT
+      ===================================================== */}
 
-        <h2>💡 AI Response</h2>
+      {agentResult && (
 
-        <p>
-          Retrieved project intelligence
-        </p>
+        <section className="card">
 
-        <div className="answer-box">
+          {renderAgentResult()}
 
-          {answer ? (
+        </section>
+
+      )}
+
+
+      {/* =====================================================
+          GENERAL AI ANSWER
+      ===================================================== */}
+
+      {answer && (
+
+        <section className="card">
+
+          <h2>
+            💡 AI Response
+          </h2>
+
+          <p>
+            Retrieved project intelligence
+          </p>
+
+          <div className="answer-box">
+
             <p>
               {answer}
             </p>
-          ) : (
+
+          </div>
+
+        </section>
+
+      )}
+
+
+      {/* =====================================================
+          EMPTY STATE
+      ===================================================== */}
+
+      {!agentResult && !answer && !asking && (
+
+        <section className="card">
+
+          <h2>
+            💡 AI Response
+          </h2>
+
+          <div className="answer-box">
+
             <p className="placeholder">
-              💬 Your AI answer will appear here.
+              💬 Your AI result will appear here.
             </p>
-          )}
 
-        </div>
+          </div>
 
-      </section>
+        </section>
+
+      )}
 
 
-      {/* Footer */}
+      {/* =====================================================
+          FOOTER
+      ===================================================== */}
+
       <footer>
         EduRAG • AI Project Intelligence
       </footer>

@@ -1,44 +1,104 @@
 import json
+import re
 from llm import generate_answer
+
+
+def _clean_json_response(answer):
+    """Clean and extract JSON returned by the LLM."""
+
+    if not answer:
+        return ""
+
+    answer = answer.strip()
+
+    # Remove markdown fences
+    answer = re.sub(
+        r"^```json\s*",
+        "",
+        answer,
+        flags=re.IGNORECASE
+    )
+
+    answer = re.sub(
+        r"^```\s*",
+        "",
+        answer
+    )
+
+    answer = re.sub(
+        r"\s*```$",
+        "",
+        answer
+    )
+
+    answer = answer.strip()
+
+    # Extract JSON object
+    start = answer.find("{")
+    end = answer.rfind("}")
+
+    if start != -1 and end != -1 and end > start:
+        answer = answer[start:end + 1]
+
+    return answer.strip()
+
+
+def _empty_result():
+    return {
+        "blockers": [],
+        "action_items": [],
+        "pending_decisions": [],
+        "unresolved_issues": []
+    }
 
 
 def identify_blockers_and_actions(context):
 
+    if not context or not context.strip():
+        result = _empty_result()
+        result["raw_response"] = "No project context was provided."
+        return result
+
     question = """
 You are the Blocker and Action Item Identification Agent.
 
-Analyze ONLY the provided project context.
+Analyze ONLY the project context provided below.
 
-Your task is to identify:
+Extract information into exactly four categories:
 
-1. Current Blockers
-2. Action Items
-3. Pending Decisions
-4. Unresolved Issues
+1. blockers
+2. action_items
+3. pending_decisions
+4. unresolved_issues
 
+STRICT RULES:
 
-========================
-BLOCKER DEFINITION
-========================
+- Use ONLY information explicitly supported by the context.
+- Do NOT use outside knowledge.
+- Do NOT invent information.
+- Do NOT infer missing information.
+- Scan the entire context.
+- Avoid duplicates.
 
-A blocker is a CURRENT problem that is actively preventing
-a person, team, task, or milestone from continuing.
+==================================================
+BLOCKERS
+==================================================
 
-Detect both explicit and implicit blockers.
+A blocker is a CURRENT problem that is explicitly preventing
+work from continuing.
 
-Examples:
+Only classify something as a blocker when the context clearly
+indicates that work is being prevented, delayed, or unable to
+continue.
 
-- "Payment credentials have not been provided."
-- "Frontend is waiting for the final API response format."
-- "QA cannot begin until backend APIs are available."
-- "The team cannot continue until access is granted."
+For every blocker return:
 
-These are blockers because current work is being prevented.
+- description
+- blocker_type
+- affected_area
+- impact
 
-
-BLOCKER TYPES
-
-Use ONLY one of these types:
+Allowed blocker_type values:
 
 - Technical
 - Dependency
@@ -47,31 +107,16 @@ Use ONLY one of these types:
 - Access / Environment
 - Decision
 
-Examples:
+If no current blocker exists, return [].
 
-Missing API → Dependency
-Missing credentials → Access / Environment
-Integration error → Technical
-Missing requirement clarification → Requirement
-Waiting for approval → Decision
+==================================================
+ACTION ITEMS
+==================================================
 
+Extract ONLY explicitly stated tasks, actions, next steps,
+or pending work.
 
-IMPORTANT:
-
-A dependency becomes a BLOCKER only when it is currently
-preventing work.
-
-A future dependency or possible future problem is NOT a blocker.
-
-
-========================
-ACTION ITEM DEFINITION
-========================
-
-An action item is a SPECIFIC TASK that is explicitly assigned
-or stated as something that needs to be done.
-
-Extract:
+For every action item return:
 
 - action
 - responsible_team
@@ -79,144 +124,84 @@ Extract:
 - priority
 - status
 
-IMPORTANT:
+If a field is not explicitly available, use "".
 
-ONLY extract action items when the context explicitly identifies
-them as actions/tasks/next steps/follow-ups.
+Do NOT convert risks, goals, milestones, or general
+responsibilities into action items.
 
-DO NOT convert the following into action items:
+If no action items exist, return [].
 
-- Project milestones
-- Upcoming milestones
-- Deliverables
-- General responsibilities
-- Future risks
-- Dependencies
-- Project goals
+==================================================
+PENDING DECISIONS
+==================================================
 
-For example:
+Extract only decisions or approvals that are explicitly
+pending.
 
-"Risk detection and forecasting — September 20, 2026 — AI Team — Pending"
+For every pending decision return:
 
-This is a MILESTONE, NOT an action item.
+- decision
+- responsible_team
+- impact
 
-Therefore, DO NOT include it in action_items unless the document
-explicitly states it as an action item.
+Use "" when information is unavailable.
 
+If no pending decision exists, return [].
 
-Do NOT infer:
+==================================================
+UNRESOLVED ISSUES
+==================================================
 
-- responsible team
-- due date
-- priority
-- status
+Extract current problems that are explicitly described as
+unresolved, not finalized, still under investigation, or
+otherwise remaining unresolved.
 
-If information is not explicitly available, use "".
+For every unresolved issue return:
 
+- issue
+- affected_area
+- impact
 
-========================
-PENDING DECISION
-========================
+Use "" when information is unavailable.
 
-A pending decision is an actual decision that has NOT yet been
-made or is explicitly awaiting approval.
+If no unresolved issue exists, return [].
 
-Examples:
+==================================================
+IMPORTANT CLASSIFICATION RULES
+==================================================
 
-- "Client is undecided about guest checkout."
-- "Waiting for client approval on the requirement."
-- "The team has not decided which option to use."
+Risk is NOT automatically a blocker.
 
-IMPORTANT:
+Dependency is NOT automatically a blocker.
 
-The following are NOT pending decisions:
+Milestone is NOT automatically an action item.
 
-- A blocker
-- A dependency
-- A milestone
-- A deadline
-- A future risk
-- "Cannot begin until API is available"
+Deadline is NOT automatically an action item.
 
-For example:
+General responsibility is NOT automatically an action item.
 
-"QA cannot begin until backend APIs are available."
+Only extract what the context explicitly supports.
 
-This is a DEPENDENCY BLOCKER, NOT a pending decision.
-
-
-========================
-UNRESOLVED ISSUE
-========================
-
-An unresolved issue is a CURRENT problem that exists and has
-not yet been resolved.
-
-Examples:
-
-- "API response format is not finalized."
-- "Integration error is still unresolved."
-- "The team is still investigating the integration problem."
-
-
-========================
-IMPORTANT RULES
-========================
-
-1. Use ONLY information explicitly available in the context.
-
-2. Do NOT use outside knowledge.
-
-3. Do NOT invent information.
-
-4. Do NOT convert milestones into action items.
-
-5. Do NOT convert project responsibilities into action items.
-
-6. Do NOT convert future risks into blockers.
-
-7. Do NOT convert dependencies into pending decisions.
-
-8. If a dependency is CURRENTLY preventing work, classify it
-   as a blocker.
-
-9. "waiting for", "cannot begin until", "unable to continue",
-   "blocked by", and similar phrases may indicate implicit blockers.
-
-10. A milestone with a date is NOT automatically an action item.
-
-11. Do NOT infer due dates from milestone dates.
-
-12. Do NOT infer priority.
-
-13. Do NOT infer responsible teams.
-
-14. Do NOT infer status.
-
-15. Preserve dates and team names exactly as provided.
-
-16. If there are no blockers, return an empty blockers list.
-
-17. If there are no explicit action items, return an empty
-    action_items list.
-
-18. If there are no pending decisions, return an empty
-    pending_decisions list.
-
-19. If there are no unresolved issues, return an empty
-    unresolved_issues list.
-
-
-========================
-OUTPUT FORMAT
-========================
+==================================================
+OUTPUT
+==================================================
 
 Return ONLY valid JSON.
 
-Do NOT use markdown fences.
+Do NOT use markdown.
+Do NOT use code fences.
 Do NOT add explanations.
 
-Return exactly:
+Use exactly this structure:
+
+{
+    "blockers": [],
+    "action_items": [],
+    "pending_decisions": [],
+    "unresolved_issues": []
+}
+
+If items exist, use the following structures:
 
 {
     "blockers": [
@@ -253,26 +238,104 @@ Return exactly:
 }
 """
 
-    answer = generate_answer(question, context)
-
-    answer = answer.strip()
-
-    if answer.startswith("```json"):
-        answer = answer[7:].strip()
-    elif answer.startswith("```"):
-        answer = answer[3:].strip()
-
-    if answer.endswith("```"):
-        answer = answer[:-3].strip()
-
     try:
-        return json.loads(answer)
 
-    except json.JSONDecodeError:
-        return {
-            "blockers": [],
-            "action_items": [],
-            "pending_decisions": [],
-            "unresolved_issues": [],
-            "raw_response": answer
-        }
+        print("Running Blocker & Action Item Agent...")
+
+        answer = generate_answer(
+            question,
+            context,
+            json_mode=True
+        )
+
+        cleaned_answer = _clean_json_response(answer)
+
+        if not cleaned_answer:
+
+            result = _empty_result()
+            result["raw_response"] = (
+                "The model returned an empty response."
+            )
+
+            return result
+
+        # --------------------------------------------------
+        # PARSE JSON
+        # --------------------------------------------------
+
+        try:
+
+            result = json.loads(cleaned_answer)
+
+        except json.JSONDecodeError as error:
+
+            print(
+                "\nBlocker Agent JSON parsing failed:"
+            )
+
+            print(error)
+
+            print("\nRaw model response:")
+            print(answer)
+
+            result = _empty_result()
+
+            result["raw_response"] = answer
+
+            return result
+
+        # --------------------------------------------------
+        # VALIDATE RESULT
+        # --------------------------------------------------
+
+        if not isinstance(result, dict):
+
+            fallback = _empty_result()
+            fallback["raw_response"] = answer
+
+            return fallback
+
+        # --------------------------------------------------
+        # REQUIRED FIELDS
+        # --------------------------------------------------
+
+        result.setdefault("blockers", [])
+        result.setdefault("action_items", [])
+        result.setdefault("pending_decisions", [])
+        result.setdefault("unresolved_issues", [])
+
+        # --------------------------------------------------
+        # ENSURE LISTS
+        # --------------------------------------------------
+
+        fields = [
+            "blockers",
+            "action_items",
+            "pending_decisions",
+            "unresolved_issues"
+        ]
+
+        for field in fields:
+
+            if not isinstance(result[field], list):
+                result[field] = []
+
+        print(
+            "Blocker & Action Item Agent "
+            "completed successfully."
+        )
+
+        return result
+
+    except Exception as error:
+
+        print(
+            "\nBlocker & Action Item Agent error:"
+        )
+
+        print(error)
+
+        result = _empty_result()
+        result["raw_response"] = str(error)
+
+        return result

@@ -23,10 +23,16 @@ from rag.chroma_store import (
 
 from llm import generate_answer
 
+# Agents
+from agents.scope_extraction_agent import extract_scope
+from agents.risk_detection_agent import detect_risks
+from agents.blocker_action_agent import identify_blockers_and_actions
+from agents.documentation_agent import generate_documentation
 
-# ==========================================
+
+# ============================================================
 # CREATE FASTAPI APPLICATION
-# ==========================================
+# ============================================================
 
 app = FastAPI(
     title="AI Project Intelligence & Risk Advisor",
@@ -34,9 +40,9 @@ app = FastAPI(
 )
 
 
-# ==========================================
-# CORS CONFIGURATION
-# ==========================================
+# ============================================================
+# CORS
+# ============================================================
 
 app.add_middleware(
     CORSMiddleware,
@@ -49,9 +55,9 @@ app.add_middleware(
 )
 
 
-# ==========================================
+# ============================================================
 # UPLOAD FOLDER
-# ==========================================
+# ============================================================
 
 UPLOAD_FOLDER = Path("uploads")
 
@@ -61,20 +67,19 @@ UPLOAD_FOLDER.mkdir(
 )
 
 
-# ==========================================
+# ============================================================
 # REQUEST MODEL
-# ==========================================
+# ============================================================
 
 class AskRequest(BaseModel):
-
     project_name: str
     question: str
     agent: str
 
 
-# ==========================================
-# HOME ROUTE
-# ==========================================
+# ============================================================
+# HOME
+# ============================================================
 
 @app.get("/")
 def home():
@@ -85,9 +90,9 @@ def home():
     }
 
 
-# ==========================================
+# ============================================================
 # UPLOAD DOCUMENTS
-# ==========================================
+# ============================================================
 
 @app.post("/api/upload")
 async def upload_documents(
@@ -100,20 +105,17 @@ async def upload_documents(
         project_name = project_name.strip()
 
         if not project_name:
-
             raise HTTPException(
                 status_code=400,
                 detail="Project name is required"
             )
 
         if not files:
-
             raise HTTPException(
                 status_code=400,
                 detail="Please upload at least one file"
             )
 
-        # Create project folder
         project_folder = (
             UPLOAD_FOLDER / project_name
         )
@@ -131,7 +133,6 @@ async def upload_documents(
             if not file.filename:
                 continue
 
-            # Prevent unsafe file paths
             safe_filename = Path(
                 file.filename
             ).name
@@ -140,10 +141,7 @@ async def upload_documents(
                 f"\nProcessing file: {safe_filename}"
             )
 
-            # ==================================
-            # SAVE FILE
-            # ==================================
-
+            # Save file
             file_path = (
                 project_folder / safe_filename
             )
@@ -162,10 +160,7 @@ async def upload_documents(
                 f"File saved: {file_path}"
             )
 
-            # ==================================
-            # LOAD DOCUMENT
-            # ==================================
-
+            # Load document
             text = load_document(
                 str(file_path)
             )
@@ -182,10 +177,7 @@ async def upload_documents(
 
                 continue
 
-            # ==================================
-            # CREATE CHUNKS
-            # ==================================
-
+            # Chunk document
             chunks = chunk_text(text)
 
             print(
@@ -193,26 +185,15 @@ async def upload_documents(
             )
 
             if not chunks:
-
-                print(
-                    f"No chunks created for {safe_filename}"
-                )
-
                 continue
 
-            # ==================================
-            # CREATE SOURCE NAMES
-            # ==================================
-
+            # Source metadata
             sources = [
                 f"{project_name}/{safe_filename}"
                 for _ in chunks
             ]
 
-            # ==================================
-            # STORE DOCUMENTS IN CHROMADB
-            # ==================================
-
+            # Store in ChromaDB
             added_chunks = add_documents(
                 chunks,
                 sources,
@@ -249,16 +230,11 @@ async def upload_documents(
         }
 
     except HTTPException:
-
         raise
 
     except Exception as error:
 
         print("\nUPLOAD ERROR")
-
-        print(
-            f"Error message: {str(error)}"
-        )
 
         traceback.print_exc()
 
@@ -268,9 +244,9 @@ async def upload_documents(
         )
 
 
-# ==========================================
+# ============================================================
 # ASK QUESTION
-# ==========================================
+# ============================================================
 
 @app.post("/api/ask")
 async def ask_question(
@@ -281,14 +257,13 @@ async def ask_question(
 
         project_name = request.project_name.strip()
         question = request.question.strip()
+        agent = request.agent.strip()
 
-        print(
-            f"\nProject: {project_name}"
-        )
-
-        print(
-            f"Question: {question}"
-        )
+        print("\n====================================")
+        print("PROJECT:", project_name)
+        print("AGENT:", agent)
+        print("QUESTION:", question)
+        print("====================================")
 
         if not project_name:
 
@@ -304,9 +279,9 @@ async def ask_question(
                 detail="Question is required"
             )
 
-        # ==================================
+        # ====================================================
         # SEARCH CHROMADB
-        # ==================================
+        # ====================================================
 
         results = search_documents(
             question,
@@ -317,59 +292,45 @@ async def ask_question(
         if not results:
 
             return {
-
                 "project_name": project_name,
-
                 "question": question,
-
-                "agent": request.agent,
-
+                "agent": agent,
                 "answer": (
-                    "I could not find this information "
+                    "I could not find relevant information "
                     "in the uploaded project documents."
                 )
-
             }
 
-        # ==================================
-        # EXTRACT DOCUMENTS FROM CHROMADB
-        # ==================================
+        # ====================================================
+        # EXTRACT DOCUMENTS
+        # ====================================================
 
         documents = results.get(
             "documents",
             []
         )
 
-        # ChromaDB returns nested documents:
-        # [["chunk 1", "chunk 2", "chunk 3"]]
-
         if documents and isinstance(
             documents[0],
             list
         ):
-
             documents = documents[0]
 
         if not documents:
 
             return {
-
                 "project_name": project_name,
-
                 "question": question,
-
-                "agent": request.agent,
-
+                "agent": agent,
                 "answer": (
                     "I could not find relevant information "
                     "in the uploaded documents."
                 )
-
             }
 
-        # ==================================
-        # PREPARE CONTEXT
-        # ==================================
+        # ====================================================
+        # BUILD CONTEXT
+        # ====================================================
 
         context = "\n\n".join(
             str(document)
@@ -378,16 +339,283 @@ async def ask_question(
         )
 
         print(
-            "\nRelevant context retrieved successfully"
+            f"\nRetrieved context: {len(context)} characters"
         )
 
-        print(
-            f"Context length: {len(context)} characters"
-        )
+        # ====================================================
+        # DOCUMENTATION AGENT
+        # ====================================================
 
-        # ==================================
-        # GENERATE GEMINI ANSWER
-        # ==================================
+        if agent == "Documentation Agent":
+
+            print(
+                "\nRunning Documentation Generation Agent..."
+            )
+
+            documentation_result = (
+                generate_documentation(context)
+            )
+
+            return {
+
+                "project_name": project_name,
+
+                "question": question,
+
+                "agent": agent,
+
+                "result": documentation_result
+
+            }
+
+        # ====================================================
+        # SCOPE EXTRACTION AGENT
+        # ====================================================
+
+        if agent == "Scope Extraction Agent":
+
+            print(
+                "\nRunning Scope Extraction Agent..."
+            )
+
+            scope_result = extract_scope(
+                context
+            )
+
+            return {
+
+                "project_name": project_name,
+
+                "question": question,
+
+                "agent": agent,
+
+                "result": scope_result
+
+            }
+
+        # ====================================================
+        # RISK DETECTION AGENT
+        # ====================================================
+
+        if agent == "Risk Detection Agent":
+
+            print(
+                "\nRunning Risk Detection Agent..."
+            )
+
+            risk_result = detect_risks(
+                context
+            )
+
+            return {
+
+                "project_name": project_name,
+
+                "question": question,
+
+                "agent": agent,
+
+                "result": risk_result
+
+            }
+
+        # ====================================================
+        # BLOCKER & ACTION ITEM AGENT
+        # ====================================================
+
+        if agent == "Blocker & Action Item Agent":
+
+            print(
+                "\nRunning Blocker & Action Item Agent..."
+            )
+
+            blocker_result = (
+                identify_blockers_and_actions(
+                    context
+                )
+            )
+
+            return {
+
+                "project_name": project_name,
+
+                "question": question,
+
+                "agent": agent,
+
+                "result": blocker_result
+
+            }
+
+        # ====================================================
+        # AUTO ROUTING
+        # ====================================================
+
+        if agent == "Auto Routing":
+
+            print(
+                "\nRunning Auto Routing..."
+            )
+
+            routing_prompt = f"""
+You are the Routing Agent of an AI Project
+Intelligence and Risk Advisor.
+
+Analyze the user's question and select the
+MOST APPROPRIATE agent.
+
+Available agents:
+
+1. Scope Extraction Agent
+2. Risk Detection Agent
+3. Blocker & Action Item Agent
+4. Documentation Agent
+5. General Project Assistant
+
+Rules:
+
+- Scope, deliverables, milestones, timelines,
+  responsibilities → Scope Extraction Agent
+
+- Risks, risk analysis, delivery forecast,
+  schedule threats → Risk Detection Agent
+
+- Blockers, action items, pending decisions,
+  unresolved issues → Blocker & Action Item Agent
+
+- User stories, risk register, project documentation,
+  structured documentation → Documentation Agent
+
+- General project questions → General Project Assistant
+
+Return ONLY the agent name.
+
+User Question:
+{question}
+"""
+
+            routing_answer = generate_answer(
+                routing_prompt,
+                context
+            )
+
+            routed_agent = (
+                routing_answer
+                .strip()
+                .replace("```", "")
+                .strip()
+            )
+
+            print(
+                "Router selected:",
+                routed_agent
+            )
+
+            # Normalize routing response
+            if "Scope Extraction" in routed_agent:
+
+                routed_agent = (
+                    "Scope Extraction Agent"
+                )
+
+            elif "Risk Detection" in routed_agent:
+
+                routed_agent = (
+                    "Risk Detection Agent"
+                )
+
+            elif "Blocker" in routed_agent:
+
+                routed_agent = (
+                    "Blocker & Action Item Agent"
+                )
+
+            elif "Documentation" in routed_agent:
+
+                routed_agent = (
+                    "Documentation Agent"
+                )
+
+            else:
+
+                routed_agent = (
+                    "General Project Assistant"
+                )
+
+            # ------------------------------------------------
+            # Execute routed agent
+            # ------------------------------------------------
+
+            if routed_agent == "Scope Extraction Agent":
+
+                result = extract_scope(
+                    context
+                )
+
+                return {
+                    "project_name": project_name,
+                    "question": question,
+                    "agent": routed_agent,
+                    "result": result
+                }
+
+            elif routed_agent == "Risk Detection Agent":
+
+                result = detect_risks(
+                    context
+                )
+
+                return {
+                    "project_name": project_name,
+                    "question": question,
+                    "agent": routed_agent,
+                    "result": result
+                }
+
+            elif routed_agent == "Blocker & Action Item Agent":
+
+                result = identify_blockers_and_actions(
+                    context
+                )
+
+                return {
+                    "project_name": project_name,
+                    "question": question,
+                    "agent": routed_agent,
+                    "result": result
+                }
+
+            elif routed_agent == "Documentation Agent":
+
+                result = generate_documentation(
+                    context
+                )
+
+                return {
+                    "project_name": project_name,
+                    "question": question,
+                    "agent": routed_agent,
+                    "result": result
+                }
+
+            else:
+
+                answer = generate_answer(
+                    question,
+                    context
+                )
+
+                return {
+                    "project_name": project_name,
+                    "question": question,
+                    "agent": routed_agent,
+                    "answer": answer
+                }
+
+        # ====================================================
+        # GENERAL PROJECT ASSISTANT
+        # ====================================================
 
         answer = generate_answer(
             question,
@@ -407,14 +635,13 @@ async def ask_question(
 
             "question": question,
 
-            "agent": request.agent,
+            "agent": "General Project Assistant",
 
             "answer": answer
 
         }
 
     except HTTPException:
-
         raise
 
     except Exception as error:
@@ -433,9 +660,9 @@ async def ask_question(
         )
 
 
-# ==========================================
-# RUN APPLICATION
-# ==========================================
+# ============================================================
+# RUN SERVER
+# ============================================================
 
 if __name__ == "__main__":
 
