@@ -9,29 +9,66 @@ import GeneralResult from "./components/GeneralResult";
 
 const API_URL = "http://localhost:5000";
 
+const CONVERSATIONAL_AGENT =
+  "Conversational Project Intelligence";
+
 function App() {
+  // =========================================================
+  // PROJECT / UPLOAD STATE
+  // =========================================================
+
   const [projectName, setProjectName] = useState("");
   const [files, setFiles] = useState([]);
 
+  const [uploadMessage, setUploadMessage] = useState("");
+  const [uploading, setUploading] = useState(false);
+
+  // =========================================================
+  // AGENT STATE
+  // =========================================================
+
   const [agent, setAgent] = useState("Auto Routing");
+
   const [question, setQuestion] = useState("");
 
   const [agentResult, setAgentResult] = useState(null);
+
   const [answer, setAnswer] = useState("");
 
-  const [uploadMessage, setUploadMessage] = useState("");
-
-  const [uploading, setUploading] = useState(false);
   const [asking, setAsking] = useState(false);
 
   const [error, setError] = useState("");
 
   // =========================================================
-  // HANDLE FILE SELECTION
+  // CONVERSATIONAL AI
+  // =========================================================
+
+  const [conversationHistory, setConversationHistory] =
+    useState([]);
+
+  // =========================================================
+  // HEALTH SCORE
+  // =========================================================
+
+  const [healthScore, setHealthScore] = useState(null);
+
+  // =========================================================
+  // VALIDATION
+  // =========================================================
+
+  const [validationQuestion, setValidationQuestion] =
+    useState("");
+
+  const [validationAnswer, setValidationAnswer] =
+    useState("");
+
+  // =========================================================
+  // FILE SELECTION
   // =========================================================
 
   const handleFileChange = (event) => {
     setFiles(Array.from(event.target.files));
+
     setUploadMessage("");
     setError("");
   };
@@ -45,6 +82,10 @@ function App() {
     setUploadMessage("");
     setAnswer("");
     setAgentResult(null);
+    setHealthScore(null);
+
+    // New upload = new conversation
+    setConversationHistory([]);
 
     if (!projectName.trim()) {
       setError("Please enter a project name.");
@@ -82,20 +123,25 @@ function App() {
 
       if (!response.ok) {
         throw new Error(
-          data.detail || "Document upload failed."
+          data.detail ||
+            "Document upload failed."
         );
       }
 
       setUploadMessage(
         data.message ||
-        "Documents uploaded successfully."
+          "Documents uploaded successfully."
       );
 
-    } catch (error) {
-      console.error("Upload error:", error);
+    } catch (err) {
+      console.error(
+        "Upload error:",
+        err
+      );
 
       setError(
-        error.message || "Upload failed."
+        err.message ||
+          "Upload failed."
       );
 
     } finally {
@@ -104,7 +150,7 @@ function App() {
   };
 
   // =========================================================
-  // ASK QUESTION
+  // ASK NORMAL AGENT
   // =========================================================
 
   const handleAskQuestion = async () => {
@@ -124,6 +170,9 @@ function App() {
       return;
     }
 
+    const currentQuestion =
+      question.trim();
+
     try {
       setAsking(true);
 
@@ -133,40 +182,120 @@ function App() {
           method: "POST",
 
           headers: {
-            "Content-Type": "application/json",
+            "Content-Type":
+              "application/json",
           },
 
           body: JSON.stringify({
-            project_name: projectName.trim(),
-            question: question.trim(),
-            agent: agent,
+            project_name:
+              projectName.trim(),
+
+            question:
+              currentQuestion,
+
+            agent:
+              agent,
+
+            conversation_history:
+              conversationHistory,
           }),
         }
       );
 
-      const data = await response.json();
+      const data =
+        await response.json();
 
-      console.log("Backend response:", data);
+      console.log(
+        "Backend response:",
+        data
+      );
 
       if (!response.ok) {
         throw new Error(
-          data.detail || "Question failed."
+          data.detail ||
+            "Question failed."
         );
       }
 
       // =====================================================
-      // HANDLE AGENT RESULT
+      // HEALTH SCORE
       // =====================================================
 
-      if (data.result !== undefined) {
-        setAgentResult(data.result);
+      if (
+        agent ===
+          "Project Health Score" ||
+        data.health_score !== undefined
+      ) {
+        const score =
+          data.health_score ??
+          data.result ??
+          data;
+
+        setHealthScore(score);
+
+        setQuestion("");
+
+        return;
       }
 
-      if (data.answer !== undefined) {
-        setAnswer(data.answer);
+      // =====================================================
+      // CONVERSATIONAL AGENT
+      // =====================================================
+
+      if (
+        agent ===
+        CONVERSATIONAL_AGENT
+      ) {
+        const aiAnswer =
+          data.answer ||
+          data.response ||
+          "No answer was returned.";
+
+        setAnswer(aiAnswer);
+
+        setConversationHistory(
+          (previousHistory) => [
+            ...previousHistory,
+
+            {
+              role: "user",
+              content:
+                currentQuestion,
+            },
+
+            {
+              role: "assistant",
+              content:
+                aiAnswer,
+            },
+          ]
+        );
+
+        setQuestion("");
+
+        return;
       }
 
-      // Support structured result returned directly
+      // =====================================================
+      // NORMAL AGENTS
+      // =====================================================
+
+      if (
+        data.result !== undefined
+      ) {
+        setAgentResult(
+          data.result
+        );
+      }
+
+      if (
+        data.answer !== undefined
+      ) {
+        setAnswer(
+          data.answer
+        );
+      }
+
       if (
         data.result === undefined &&
         data.answer === undefined
@@ -174,11 +303,217 @@ function App() {
         setAgentResult(data);
       }
 
-    } catch (error) {
-      console.error("Question error:", error);
+      setQuestion("");
+
+    } catch (err) {
+      console.error(
+        "Question error:",
+        err
+      );
 
       setError(
-        error.message || "Question failed."
+        err.message ||
+          "Question failed."
+      );
+
+    } finally {
+      setAsking(false);
+    }
+  };
+
+  // =========================================================
+  // CONVERSATIONAL AI
+  // =========================================================
+
+  const handleConversationalAsk =
+    async () => {
+
+      setError("");
+
+      if (!projectName.trim()) {
+        setError(
+          "Please enter the project name and upload project documents first."
+        );
+        return;
+      }
+
+      if (!question.trim()) {
+        setError(
+          "Please enter a question."
+        );
+        return;
+      }
+
+      const currentQuestion =
+        question.trim();
+
+      try {
+        setAsking(true);
+
+        const response =
+          await fetch(
+            `${API_URL}/api/ask`,
+            {
+              method: "POST",
+
+              headers: {
+                "Content-Type":
+                  "application/json",
+              },
+
+              body: JSON.stringify({
+                project_name:
+                  projectName.trim(),
+
+                question:
+                  currentQuestion,
+
+                agent:
+                  CONVERSATIONAL_AGENT,
+
+                conversation_history:
+                  conversationHistory,
+              }),
+            }
+          );
+
+        const data =
+          await response.json();
+
+        if (!response.ok) {
+          throw new Error(
+            data.detail ||
+              "Conversational AI request failed."
+          );
+        }
+
+        const aiAnswer =
+          data.answer ||
+          data.response ||
+          "No answer was returned.";
+
+        // Add user message + AI response
+        setConversationHistory(
+          (previousHistory) => [
+            ...previousHistory,
+
+            {
+              role: "user",
+              content:
+                currentQuestion,
+            },
+
+            {
+              role: "assistant",
+              content:
+                aiAnswer,
+            },
+          ]
+        );
+
+        setQuestion("");
+
+      } catch (err) {
+        console.error(
+          "Conversational AI error:",
+          err
+        );
+
+        setError(
+          err.message ||
+            "Conversational AI failed."
+        );
+
+      } finally {
+        setAsking(false);
+      }
+    };
+
+  // =========================================================
+  // CLEAR CONVERSATION
+  // =========================================================
+
+  const clearConversation = () => {
+    setConversationHistory([]);
+    setQuestion("");
+    setError("");
+  };
+
+  // =========================================================
+  // VALIDATE CONVERSATIONAL AI
+  // =========================================================
+
+  const handleValidation = async () => {
+    setError("");
+    setValidationAnswer("");
+
+    if (!projectName.trim()) {
+      setError(
+        "Please enter the project name first."
+      );
+      return;
+    }
+
+    if (!validationQuestion.trim()) {
+      setError(
+        "Please enter a validation question."
+      );
+      return;
+    }
+
+    try {
+      setAsking(true);
+
+      const response = await fetch(
+        `${API_URL}/api/ask`,
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type":
+              "application/json",
+          },
+
+          body: JSON.stringify({
+            project_name:
+              projectName.trim(),
+
+            question:
+              validationQuestion.trim(),
+
+            agent:
+              CONVERSATIONAL_AGENT,
+
+            conversation_history: [],
+          }),
+        }
+      );
+
+      const data =
+        await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.detail ||
+            "Validation request failed."
+        );
+      }
+
+      setValidationAnswer(
+        data.answer ||
+          data.response ||
+          "No answer returned."
+      );
+
+    } catch (err) {
+      console.error(
+        "Validation error:",
+        err
+      );
+
+      setError(
+        err.message ||
+          "Validation failed."
       );
 
     } finally {
@@ -195,13 +530,12 @@ function App() {
       return null;
     }
 
-    // -------------------------------------------------------
-    // Scope Extraction Agent
-    // -------------------------------------------------------
-
+    // Scope
     if (
-      agent === "Scope Extraction Agent" ||
-      agentResult.project_goal !== undefined
+      agent ===
+        "Scope Extraction Agent" ||
+      agentResult.project_goal !==
+        undefined
     ) {
       return (
         <ScopeResult
@@ -210,13 +544,12 @@ function App() {
       );
     }
 
-    // -------------------------------------------------------
-    // Risk Detection Agent
-    // -------------------------------------------------------
-
+    // Risk
     if (
-      agent === "Risk Detection Agent" ||
-      agentResult.risks !== undefined
+      agent ===
+        "Risk Detection Agent" ||
+      agentResult.risks !==
+        undefined
     ) {
       return (
         <RiskResult
@@ -225,17 +558,14 @@ function App() {
       );
     }
 
-    // -------------------------------------------------------
-    // Blocker & Action Item Agent
-    // -------------------------------------------------------
-
+    // Blockers
     if (
-      agent === "Blocker & Action Item Agent" ||
-      agentResult.blockers !== undefined ||
-      (
-        agentResult.action_items !== undefined &&
-        agentResult.pending_decisions !== undefined
-      )
+      agent ===
+        "Blocker & Action Item Agent" ||
+      agentResult.blockers !==
+        undefined ||
+      agentResult.action_items !==
+        undefined
     ) {
       return (
         <BlockerResult
@@ -244,14 +574,16 @@ function App() {
       );
     }
 
-    // -------------------------------------------------------
-    // Documentation Agent
-    // -------------------------------------------------------
-
+    // Documentation
     if (
-      agent === "Documentation Agent" ||
-      agentResult.user_stories !== undefined ||
-      agentResult.risk_register !== undefined
+      agent ===
+        "Documentation Agent" ||
+      agent ===
+        "Documentation Generation Agent" ||
+      agentResult.user_stories !==
+        undefined ||
+      agentResult.risk_register !==
+        undefined
     ) {
       return (
         <DocumentationResult
@@ -260,14 +592,165 @@ function App() {
       );
     }
 
-    // -------------------------------------------------------
-    // General / Auto Routing fallback
-    // -------------------------------------------------------
-
     return (
       <GeneralResult
         data={agentResult}
       />
+    );
+  };
+
+  // =========================================================
+  // HEALTH SCORE
+  // =========================================================
+
+  const renderHealthScore = () => {
+    if (!healthScore) {
+      return null;
+    }
+
+    const score =
+      healthScore.overall_score ??
+      healthScore.score ??
+      0;
+
+    const status =
+      healthScore.overall_status ||
+      healthScore.status ||
+      "Unknown";
+
+    const dimensions =
+      healthScore.dimensions ||
+      {};
+
+    return (
+      <section className="card">
+
+        <h2>
+          📊 Project Health Score
+        </h2>
+
+        <div className="health-score-box">
+
+          <h1>
+            {score}/100
+          </h1>
+
+          <p>
+            Overall Status:{" "}
+            <strong>
+              {status}
+            </strong>
+          </p>
+
+        </div>
+
+        <div className="health-dimensions">
+
+          {dimensions.scope_clarity && (
+            <div className="health-dimension">
+
+              <h3>
+                Scope Clarity
+              </h3>
+
+              <strong>
+                {
+                  dimensions
+                    .scope_clarity
+                    .score
+                }/100
+              </strong>
+
+              <p>
+                {
+                  dimensions
+                    .scope_clarity
+                    .status
+                }
+              </p>
+
+              <small>
+                {
+                  dimensions
+                    .scope_clarity
+                    .evidence
+                }
+              </small>
+
+            </div>
+          )}
+
+          {dimensions.timeline_risk && (
+            <div className="health-dimension">
+
+              <h3>
+                Timeline Risk
+              </h3>
+
+              <strong>
+                {
+                  dimensions
+                    .timeline_risk
+                    .score
+                }/100
+              </strong>
+
+              <p>
+                {
+                  dimensions
+                    .timeline_risk
+                    .status
+                }
+              </p>
+
+              <small>
+                {
+                  dimensions
+                    .timeline_risk
+                    .evidence
+                }
+              </small>
+
+            </div>
+          )}
+
+          {dimensions.blocker_count && (
+            <div className="health-dimension">
+
+              <h3>
+                Blocker Count
+              </h3>
+
+              <strong>
+                {
+                  dimensions
+                    .blocker_count
+                    .score
+                }/100
+              </strong>
+
+              <p>
+                {
+                  dimensions
+                    .blocker_count
+                    .status
+                }
+              </p>
+
+              <small>
+                {
+                  dimensions
+                    .blocker_count
+                    .evidence
+                }
+              </small>
+
+            </div>
+          )}
+
+        </div>
+
+      </section>
     );
   };
 
@@ -289,14 +772,15 @@ function App() {
         </h1>
 
         <p>
-          Analyze your project documents using AI
+          Analyze, monitor, and interact with
+          your project using AI
         </p>
 
       </header>
 
 
       {/* =====================================================
-          UPLOAD SECTION
+          UPLOAD
       ===================================================== */}
 
       <section className="card">
@@ -309,23 +793,20 @@ function App() {
           Upload PDF, DOCX, CSV, or TXT files
         </p>
 
-        {/* Project Name */}
-
         <label>
           Project Name
         </label>
 
         <input
           type="text"
-          placeholder="Enter project name (e.g., EduRAG)"
+          placeholder="Enter project name"
           value={projectName}
-          onChange={(event) =>
-            setProjectName(event.target.value)
+          onChange={(e) =>
+            setProjectName(
+              e.target.value
+            )
           }
         />
-
-
-        {/* File Input */}
 
         <label>
           Select Documents
@@ -338,11 +819,7 @@ function App() {
           onChange={handleFileChange}
         />
 
-
-        {/* Selected Files */}
-
         {files.length > 0 && (
-
           <div className="file-list">
 
             <h4>
@@ -351,94 +828,70 @@ function App() {
 
             <ul>
 
-              {files.map((file, index) => (
-
-                <li key={index}>
-                  {file.name}
-                </li>
-
-              ))}
+              {files.map(
+                (file, index) => (
+                  <li key={index}>
+                    {file.name}
+                  </li>
+                )
+              )}
 
             </ul>
 
           </div>
-
         )}
-
-
-        {/* Upload Button */}
 
         <button
           onClick={handleUpload}
           disabled={uploading}
         >
-
           {uploading
             ? "Uploading..."
             : "Upload Documents"}
-
         </button>
 
-
-        {/* Upload Message */}
-
         {uploadMessage && (
-
           <div className="success-message">
             {uploadMessage}
           </div>
-
         )}
 
       </section>
 
 
       {/* =====================================================
-          PROJECT ASSISTANT
+          PROJECT INTELLIGENCE
       ===================================================== */}
 
       <section className="card">
 
         <h2>
-          🤖 Ask Your Project Assistant
+          🤖 Project Intelligence
         </h2>
 
         <p>
-          Select an agent and analyze your project documents
+          Select an analysis mode or interact
+          with your project documents.
         </p>
 
-
-        {/* Project Name */}
-
         <label>
-          Project Name
-        </label>
-
-        <input
-          type="text"
-          value={projectName}
-          onChange={(event) =>
-            setProjectName(event.target.value)
-          }
-          placeholder="Enter your project name"
-        />
-
-
-        {/* Agent */}
-
-        <label>
-          Agent
+          Agent / Feature
         </label>
 
         <select
           value={agent}
-          onChange={(event) => {
+          onChange={(e) => {
 
-            setAgent(event.target.value);
+            const selectedAgent =
+              e.target.value;
 
-            // Clear previous result
+            setAgent(
+              selectedAgent
+            );
+
             setAgentResult(null);
             setAnswer("");
+            setHealthScore(null);
             setError("");
 
           }}
@@ -461,40 +914,253 @@ function App() {
           </option>
 
           <option value="Documentation Agent">
-            Documentation Agent
+            Documentation Generation Agent
+          </option>
+
+          <option value="Project Health Score">
+            📊 Project Health Score
+          </option>
+
+          <option value={CONVERSATIONAL_AGENT}>
+            💬 Conversational Project Intelligence
           </option>
 
         </select>
 
 
-        {/* Question */}
+        {/* NORMAL AGENT QUESTION */}
+
+        {agent !==
+          CONVERSATIONAL_AGENT && (
+
+          <>
+
+            <label>
+              Question
+            </label>
+
+            <textarea
+              rows="5"
+              placeholder="Ask a question about your project..."
+              value={question}
+              onChange={(e) =>
+                setQuestion(
+                  e.target.value
+                )
+              }
+            />
+
+            <button
+              onClick={
+                handleAskQuestion
+              }
+              disabled={asking}
+            >
+              {asking
+                ? "Analyzing..."
+                : "Ask Question"}
+            </button>
+
+          </>
+
+        )}
+
+      </section>
+
+
+      {/* =====================================================
+          FULL CONVERSATIONAL PROJECT INTELLIGENCE
+          ALWAYS VISIBLE
+      ===================================================== */}
+
+      <section className="card">
+
+        <h2>
+          💬 Conversational Project Intelligence
+        </h2>
+
+        <p>
+          Chat with your project assistant using
+          information from your uploaded project
+          documents.
+        </p>
+
+        <div className="project-chat-info">
+
+          <strong>
+            Current Project:
+          </strong>{" "}
+
+          {projectName.trim()
+            ? projectName
+            : "Enter a project name above"}
+
+        </div>
+
+
+        {/* CHAT WINDOW */}
+
+        <div className="chat-container">
+
+          {conversationHistory.length === 0 ? (
+
+            <div className="empty-chat">
+
+              <h3>
+                🤖 Project Assistant
+              </h3>
+
+              <p>
+                Start a conversation with
+                your project assistant.
+              </p>
+
+              <p>
+                You can ask:
+              </p>
+
+              <p>
+                <strong>
+                  "What is the project deadline?"
+                </strong>
+              </p>
+
+              <p>
+                <strong>
+                  "What are the main project risks?"
+                </strong>
+              </p>
+
+              <p>
+                <strong>
+                  "Are we on track?"
+                </strong>
+              </p>
+
+              <p>
+                <strong>
+                  "What should we do about this risk?"
+                </strong>
+              </p>
+
+            </div>
+
+          ) : (
+
+            conversationHistory.map(
+              (message, index) => (
+
+                <div
+                  key={index}
+                  className={
+                    message.role === "user"
+                      ? "message user-message"
+                      : "message ai-message"
+                  }
+                >
+
+                  <strong>
+                    {message.role === "user"
+                      ? "You"
+                      : "🤖 AI Assistant"}
+                  </strong>
+
+                  <p>
+                    {message.content}
+                  </p>
+
+                </div>
+
+              )
+            )
+
+          )}
+
+          {asking && (
+            <div className="message ai-message">
+
+              <strong>
+                🤖 AI Assistant
+              </strong>
+
+              <p>
+                Thinking...
+              </p>
+
+            </div>
+          )}
+
+        </div>
+
+
+        {/* CHAT INPUT */}
 
         <label>
-          Question
+          Ask your project assistant
         </label>
 
         <textarea
-          rows="5"
-          placeholder="Ask a question about your project..."
+          rows="4"
+          placeholder="Ask something about your project..."
           value={question}
-          onChange={(event) =>
-            setQuestion(event.target.value)
+          disabled={asking}
+          onChange={(e) =>
+            setQuestion(
+              e.target.value
+            )
           }
+          onKeyDown={(e) => {
+
+            if (
+              e.key === "Enter" &&
+              !e.shiftKey
+            ) {
+
+              e.preventDefault();
+
+              if (!asking) {
+                handleConversationalAsk();
+              }
+
+            }
+
+          }}
         />
 
 
-        {/* Ask Button */}
+        <div className="button-row">
 
-        <button
-          onClick={handleAskQuestion}
-          disabled={asking}
-        >
+          <button
+            onClick={
+              handleConversationalAsk
+            }
+            disabled={
+              asking ||
+              !question.trim()
+            }
+          >
+            {asking
+              ? "Thinking..."
+              : "Send Message"}
+          </button>
 
-          {asking
-            ? "Analyzing..."
-            : "Ask Question"}
 
-        </button>
+          {conversationHistory.length >
+            0 && (
+
+            <button
+              className="clear-button"
+              onClick={
+                clearConversation
+              }
+              disabled={asking}
+            >
+              Clear Conversation
+            </button>
+
+          )}
+
+        </div>
 
       </section>
 
@@ -504,19 +1170,19 @@ function App() {
       ===================================================== */}
 
       {error && (
-
         <div className="error-message">
           {error}
         </div>
-
       )}
 
 
       {/* =====================================================
-          STRUCTURED AGENT RESULT
+          AGENT RESULT
       ===================================================== */}
 
-      {agentResult && (
+      {agentResult &&
+        agent !==
+          CONVERSATIONAL_AGENT && (
 
         <section className="card">
 
@@ -528,10 +1194,19 @@ function App() {
 
 
       {/* =====================================================
-          GENERAL AI ANSWER
+          HEALTH SCORE
       ===================================================== */}
 
-      {answer && (
+      {renderHealthScore()}
+
+
+      {/* =====================================================
+          NORMAL AI RESPONSE
+      ===================================================== */}
+
+      {answer &&
+        agent !==
+          CONVERSATIONAL_AGENT && (
 
         <section className="card">
 
@@ -557,28 +1232,65 @@ function App() {
 
 
       {/* =====================================================
-          EMPTY STATE
+          CONVERSATIONAL AI VALIDATION
+          TESTING ONLY
       ===================================================== */}
 
-      {!agentResult && !answer && !asking && (
+      <section className="card">
 
-        <section className="card">
+        <h2>
+          🧪 Conversational AI Validation
+        </h2>
 
-          <h2>
-            💡 AI Response
-          </h2>
+        <p>
+          Test whether the conversational assistant
+          answers using information from the uploaded
+          project documents.
+        </p>
+
+        <label>
+          Validation Question
+        </label>
+
+        <textarea
+          rows="3"
+          placeholder="Example: What is the project deadline?"
+          value={validationQuestion}
+          onChange={(e) =>
+            setValidationQuestion(
+              e.target.value
+            )
+          }
+        />
+
+        <button
+          onClick={
+            handleValidation
+          }
+          disabled={asking}
+        >
+          {asking
+            ? "Testing..."
+            : "Test Assistant"}
+        </button>
+
+        {validationAnswer && (
 
           <div className="answer-box">
 
-            <p className="placeholder">
-              💬 Your AI result will appear here.
+            <h3>
+              Assistant Response
+            </h3>
+
+            <p>
+              {validationAnswer}
             </p>
 
           </div>
 
-        </section>
+        )}
 
-      )}
+      </section>
 
 
       {/* =====================================================
@@ -586,7 +1298,7 @@ function App() {
       ===================================================== */}
 
       <footer>
-        EduRAG • AI Project Intelligence
+        AI Project Intelligence & Risk Advisor
       </footer>
 
     </div>
