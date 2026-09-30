@@ -28,9 +28,9 @@ from llm import generate_answer
 # AGENT IMPORTS
 # ==========================================================
 
-from agents.scope_agent import extract_scope
-from agents.risk_agent import detect_risks
-from agents.blocker_agent import (
+from agents.scope_extraction_agent import extract_scope
+from agents.risk_detection_agent import detect_risks
+from agents.blocker_action_agent import (
     identify_blockers_and_actions
 )
 from agents.documentation_agent import (
