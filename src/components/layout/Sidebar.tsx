@@ -139,19 +139,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
 
         {/* User Profile Card */}
-        <div className="p-3 border-t border-slate-800/80 bg-slate-900/40">
-          <div className="flex items-center gap-2.5 p-2 rounded-lg bg-slate-900/80 border border-slate-800">
-            {/* Styled Fallback Avatar per zero-broken-image policy */}
-            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-teal-600 to-indigo-600 border border-teal-400/40 flex items-center justify-center text-xs font-bold text-white shrink-0">
-              SS
-            </div>
-            <div className="min-w-0 flex-1">
-              <span className="text-xs font-semibold text-slate-200 block truncate">Siri Sri</span>
-              <span className="text-[10px] text-teal-400 font-mono block truncate">Project Analyst</span>
-            </div>
-            <div className="w-2 h-2 rounded-full bg-teal-400 shrink-0" title="AI Agent Active" />
-          </div>
-        </div>
+        
       </aside>
     </>
   );
