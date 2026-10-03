@@ -57,7 +57,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           <div>
             <div className="flex items-center gap-2 mb-1">
               <span className="text-xs font-mono font-semibold px-2 py-0.5 rounded bg-teal-500/10 border border-teal-500/30 text-teal-400">
-                ACTIVE COCKPIT
+                PROJECT INTELLIGENCE
               </span>
               <span className="text-xs text-slate-400">· {summary?.projectName || 'Project Workspace'}</span>
             </div>

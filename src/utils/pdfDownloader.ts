@@ -1,7 +1,7 @@
 import jsPDF from 'jspdf';
 
 export function downloadSinglePDF(
-  title: string = 'Project_Documentation_Dossier',
+  title: string = 'Project_Documentation_Documentation',
   textToPrint?: string
 ) {
   const safeText =
@@ -65,7 +65,7 @@ A-03\tReview health scoring dimensions and mitigation roadmap\tProject Lead\tOng
       doc.setTextColor(45, 212, 191);
       doc.setFontSize(8);
       doc.setFont('Helvetica', 'bold');
-      doc.text('PROJECT DOCUMENTATION & INTELLIGENCE DOSSIER', margin, 8);
+      doc.text('PROJECT DOCUMENTATION & INTELLIGENCE DOCUMETATION', margin, 8);
       cursorY = 20;
     }
   };

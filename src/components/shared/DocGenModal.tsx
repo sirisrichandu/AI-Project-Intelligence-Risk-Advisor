@@ -110,7 +110,7 @@ export const DocGenModal: React.FC<DocGenModalProps> = ({
                 }}
                 className="px-3.5 py-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 text-xs font-medium flex items-center justify-center gap-1.5 transition-colors border border-slate-800"
               >
-                <span>Open in Reports & Dossier</span>
+                <span>Open in Reports & Documentaion</span>
               </button>
             )}
           </div>

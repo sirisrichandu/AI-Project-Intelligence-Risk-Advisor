@@ -88,7 +88,7 @@ export const ReportsPage: React.FC<ReportsPageProps> = ({
 
   const handleDownload = () => {
     if (!activeOutput || !hasDocuments) return;
-    downloadSinglePDF('HealthPulse_Project_Documentation_Dossier', activeOutput);
+    downloadSinglePDF('Project_Documentation_Documenataion', activeOutput);
   };
 
   const handleDownloadTxt = () => {
@@ -112,7 +112,7 @@ export const ReportsPage: React.FC<ReportsPageProps> = ({
               DOCUMENTATION GENERATION AGENT
             </span>
           </div>
-          <h2 className="text-lg font-bold text-white tracking-tight">Project Documentation & Master Dossier</h2>
+          <h2 className="text-lg font-bold text-white tracking-tight">Project Documentation & Master Documentation</h2>
           <p className="text-xs text-slate-400">
             Synthesized User Stories, Risk Register, Action Items, and Executive Project Intelligence derived from ingested documents.
           </p>
@@ -149,7 +149,7 @@ export const ReportsPage: React.FC<ReportsPageProps> = ({
               </span>
             </div>
             <h3 className="text-xl font-bold text-white tracking-tight">
-              Master Project Intelligence & Documentation Dossier
+              Master Project Intelligence & Documentation Documentation
             </h3>
             <p className="text-xs text-slate-300 mt-2 leading-relaxed">
               {hasDocuments ? (
@@ -184,7 +184,7 @@ export const ReportsPage: React.FC<ReportsPageProps> = ({
                   className="px-5 py-3 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-xs transition-all flex items-center justify-center gap-2 shadow-lg shadow-teal-500/30 disabled:opacity-50"
                 >
                   <Download className="w-4 h-4" />
-                  <span>Download PDF Dossier</span>
+                  <span>Download PDF Documentation</span>
                 </button>
                 <button
                   onClick={handleDownloadTxt}
