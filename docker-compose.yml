@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  fastapi-backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: project-intelligence-api
+    ports:
+      - "8000:8000"
+    environment:
+      - PORT=8000
+    restart: unless-stopped
+
+  streamlit-frontend:
+    image: python:3.11-slim
+    container_name: project-intelligence-streamlit
+    working_dir: /app
+    volumes:
+      - .:/app
+    ports:
+      - "8501:8501"
+    command: >
+      bash -c "pip install -r requirements-streamlit.txt &&
+               streamlit run streamlit_app.py --server.port=8501 --server.address=0.0.0.0"
+    environment:
+      - FASTAPI_URL=http://fastapi-backend:8000
+    depends_on:
+      - fastapi-backend
+    restart: unless-stopped
