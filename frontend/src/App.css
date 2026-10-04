@@ -1,0 +1,252 @@
+/* ===== Global Styles ===== */
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: "Segoe UI", Arial, sans-serif;
+  background: #f0f7f3;
+  color: #173b2b;
+}
+
+/* ===== Main App ===== */
+
+.app {
+  min-height: 100vh;
+  background: #f0f7f3;
+}
+
+.container {
+  width: 92%;
+  max-width: 1250px;
+  margin: 0 auto;
+  padding: 30px 0;
+}
+
+/* ===== Header ===== */
+
+header {
+  text-align: center;
+  padding: 30px 20px;
+}
+
+header h1 {
+  margin: 0;
+  color: #14532d;
+  font-size: 38px;
+  font-weight: 700;
+}
+
+header p {
+  margin-top: 10px;
+  color: #527060;
+  font-size: 17px;
+}
+
+/* ===== Cards ===== */
+
+.card,
+.upload-section,
+.assistant-section,
+.response-section {
+  background: #ffffff;
+  border: 1px solid #d7e9de;
+  border-radius: 20px;
+  padding: 30px;
+  margin-bottom: 25px;
+  box-shadow: 0 5px 20px rgba(31, 91, 55, 0.06);
+}
+
+.card h2,
+.upload-section h2,
+.assistant-section h2,
+.response-section h2 {
+  margin-top: 0;
+  color: #14532d;
+  font-size: 25px;
+}
+
+/* ===== Labels ===== */
+
+label {
+  display: block;
+  margin-top: 18px;
+  margin-bottom: 8px;
+  color: #24543b;
+  font-weight: 600;
+}
+
+/* ===== Inputs ===== */
+
+input[type="text"],
+input[type="file"],
+select,
+textarea {
+  width: 100%;
+  padding: 13px 15px;
+  border: 1px solid #c8ded0;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #244936;
+  font-size: 15px;
+  font-family: inherit;
+  outline: none;
+}
+
+input[type="text"]:focus,
+select:focus,
+textarea:focus {
+  border-color: #198754;
+  box-shadow: 0 0 0 3px rgba(25, 135, 84, 0.12);
+}
+
+textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+/* ===== File Input ===== */
+
+input[type="file"] {
+  padding: 10px;
+  background: #f8fcf9;
+}
+
+/* ===== Buttons ===== */
+
+button {
+  border: none;
+  border-radius: 10px;
+  padding: 13px 24px;
+  margin-top: 20px;
+  background: #198754;
+  color: white;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+button:hover {
+  background: #146c43;
+}
+
+button:disabled {
+  background: #8bbba0;
+  cursor: not-allowed;
+}
+
+/* ===== Upload Button ===== */
+
+.upload-button {
+  width: 100%;
+  background: #198754;
+}
+
+.upload-button:hover {
+  background: #146c43;
+}
+
+/* ===== Ask Button ===== */
+
+.ask-button {
+  width: 100%;
+  background: #198754;
+}
+
+.ask-button:hover {
+  background: #146c43;
+}
+
+/* ===== Messages ===== */
+
+.success-message {
+  margin-top: 15px;
+  padding: 14px;
+  border-radius: 10px;
+  background: #e1f5e8;
+  color: #146c43;
+  border: 1px solid #b7e4c7;
+}
+
+.error-message {
+  margin-top: 15px;
+  padding: 14px;
+  border-radius: 10px;
+  background: #fff0f0;
+  color: #b42318;
+  border: 1px solid #f5c2c7;
+}
+
+/* ===== AI Response ===== */
+
+.response-box {
+  min-height: 150px;
+  margin-top: 20px;
+  padding: 22px;
+  border: 1px solid #d7e9de;
+  border-left: 5px solid #198754;
+  border-radius: 12px;
+  background: #f8fcf9;
+  color: #244936;
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+
+.response-box:empty::before {
+  content: "Your AI answer will appear here.";
+  color: #8a9d91;
+}
+
+/* ===== Loading ===== */
+
+.loading {
+  text-align: center;
+  color: #198754;
+  font-weight: 600;
+  margin-top: 15px;
+}
+
+/* ===== Footer ===== */
+
+footer {
+  padding: 25px;
+  text-align: center;
+  color: #71877a;
+  font-size: 14px;
+}
+
+/* ===== Responsive Design ===== */
+
+@media (max-width: 768px) {
+  .container {
+    width: 94%;
+    padding: 20px 0;
+  }
+
+  header h1 {
+    font-size: 27px;
+  }
+
+  header p {
+    font-size: 15px;
+  }
+
+  .card,
+  .upload-section,
+  .assistant-section,
+  .response-section {
+    padding: 20px;
+    border-radius: 14px;
+  }
+
+  .card h2,
+  .upload-section h2,
+  .assistant-section h2,
+  .response-section h2 {
+    font-size: 21px;
+  }
+}

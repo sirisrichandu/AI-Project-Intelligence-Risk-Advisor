@@ -1,0 +1,1068 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        AI Project Intelligence & Risk Advisor
+    </title>
+
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+
+        body {
+
+            margin: 0;
+
+            font-family:
+                Arial,
+                Helvetica,
+                sans-serif;
+
+            background:
+                #0d1117;
+
+            color:
+                #e6edf3;
+
+        }
+
+
+        /* =========================================
+           LAYOUT
+        ========================================= */
+
+        .layout {
+
+            display: flex;
+
+            min-height: 100vh;
+
+        }
+
+
+        /* =========================================
+           SIDEBAR
+        ========================================= */
+
+        .sidebar {
+
+            width: 270px;
+
+            background:
+                #161b22;
+
+            border-right:
+                1px solid #30363d;
+
+            padding: 25px 20px;
+
+            position: fixed;
+
+            top: 0;
+
+            bottom: 0;
+
+            left: 0;
+
+        }
+
+
+        .logo {
+
+            font-size: 20px;
+
+            font-weight: bold;
+
+            margin-bottom: 10px;
+
+        }
+
+
+        .sidebar-text {
+
+            color:
+                #8b949e;
+
+            font-size: 13px;
+
+            line-height: 1.5;
+
+            margin-bottom: 25px;
+
+        }
+
+
+        .upload-title {
+
+            font-size: 13px;
+
+            font-weight: bold;
+
+            margin-bottom: 10px;
+
+        }
+
+
+        .file-input {
+
+            width: 100%;
+
+            padding: 10px;
+
+            background:
+                #21262d;
+
+            border:
+                1px solid #30363d;
+
+            border-radius: 8px;
+
+            color:
+                #c9d1d9;
+
+            font-size: 12px;
+
+        }
+
+
+        .upload-button {
+
+            width: 100%;
+
+            margin-top: 12px;
+
+            padding: 11px;
+
+            border: none;
+
+            border-radius: 8px;
+
+            background:
+                #238636;
+
+            color: white;
+
+            font-weight: bold;
+
+            cursor: pointer;
+
+        }
+
+
+        .upload-button:hover {
+
+            background:
+                #2ea043;
+
+        }
+
+
+        .file-list {
+
+            margin-top: 20px;
+
+        }
+
+
+        .file-card {
+
+            background:
+                #21262d;
+
+            border:
+                1px solid #30363d;
+
+            border-radius: 8px;
+
+            padding: 10px;
+
+            margin-bottom: 8px;
+
+            font-size: 12px;
+
+            word-break: break-word;
+
+        }
+
+
+        /* =========================================
+           MAIN CONTENT
+        ========================================= */
+
+        .main {
+
+            margin-left: 270px;
+
+            width: calc(100% - 270px);
+
+            padding: 35px 50px;
+
+        }
+
+
+        .header {
+
+            margin-bottom: 30px;
+
+        }
+
+
+        .header h1 {
+
+            font-size: 30px;
+
+            margin: 0 0 10px 0;
+
+        }
+
+
+        .header p {
+
+            color:
+                #8b949e;
+
+            margin: 0;
+
+        }
+
+
+        /* =========================================
+           STATS
+        ========================================= */
+
+        .stats {
+
+            display: grid;
+
+            grid-template-columns:
+                repeat(3, 1fr);
+
+            gap: 15px;
+
+            margin-bottom: 30px;
+
+        }
+
+
+        .stat-card {
+
+            background:
+                #161b22;
+
+            border:
+                1px solid #30363d;
+
+            border-radius: 10px;
+
+            padding: 18px;
+
+        }
+
+
+        .stat-title {
+
+            color:
+                #8b949e;
+
+            font-size: 12px;
+
+            margin-bottom: 8px;
+
+        }
+
+
+        .stat-value {
+
+            font-size: 25px;
+
+            font-weight: bold;
+
+        }
+
+
+        /* =========================================
+           MESSAGE
+        ========================================= */
+
+        .message {
+
+            background:
+                #161b22;
+
+            border:
+                1px solid #30363d;
+
+            padding: 15px;
+
+            border-radius: 8px;
+
+            margin-bottom: 25px;
+
+            color:
+                #58a6ff;
+
+        }
+
+
+        /* =========================================
+           SECTION
+        ========================================= */
+
+        .section {
+
+            margin-bottom: 35px;
+
+        }
+
+
+        .section-title {
+
+            font-size: 21px;
+
+            margin-bottom: 15px;
+
+        }
+
+
+        /* =========================================
+           CHUNKS
+        ========================================= */
+
+        .chunk-card {
+
+            background:
+                #161b22;
+
+            border:
+                1px solid #30363d;
+
+            border-radius: 10px;
+
+            padding: 20px;
+
+            margin-bottom: 14px;
+
+        }
+
+
+        .chunk-header {
+
+            display: flex;
+
+            justify-content: space-between;
+
+            align-items: center;
+
+            margin-bottom: 12px;
+
+        }
+
+
+        .chunk-number {
+
+            font-weight: bold;
+
+            color:
+                #58a6ff;
+
+        }
+
+
+        .source {
+
+            color:
+                #8b949e;
+
+            font-size: 12px;
+
+        }
+
+
+        .chunk-text {
+
+            color:
+                #c9d1d9;
+
+            line-height: 1.6;
+
+            white-space: pre-wrap;
+
+        }
+
+
+        /* =========================================
+           QUESTION
+        ========================================= */
+
+        .question-box {
+
+            background:
+                #161b22;
+
+            border:
+                1px solid #30363d;
+
+            border-radius: 10px;
+
+            padding: 25px;
+
+        }
+
+
+        .question-form {
+
+            display: flex;
+
+            gap: 10px;
+
+        }
+
+
+        .question-input {
+
+            flex: 1;
+
+            padding: 14px;
+
+            background:
+                #0d1117;
+
+            border:
+                1px solid #30363d;
+
+            border-radius: 8px;
+
+            color:
+                #e6edf3;
+
+            outline: none;
+
+        }
+
+
+        .question-input:focus {
+
+            border-color:
+                #58a6ff;
+
+        }
+
+
+        .ask-button {
+
+            padding: 14px 25px;
+
+            border: none;
+
+            border-radius: 8px;
+
+            background:
+                #1f6feb;
+
+            color: white;
+
+            font-weight: bold;
+
+            cursor: pointer;
+
+        }
+
+
+        .ask-button:hover {
+
+            background:
+                #388bfd;
+
+        }
+
+
+        /* =========================================
+           RESULTS
+        ========================================= */
+
+        .result-card {
+
+            background:
+                #161b22;
+
+            border:
+                1px solid #30363d;
+
+            border-radius: 10px;
+
+            padding: 22px;
+
+            margin-bottom: 15px;
+
+        }
+
+
+        .result-title {
+
+            font-size: 18px;
+
+            font-weight: bold;
+
+            margin-bottom: 14px;
+
+            color:
+                #58a6ff;
+
+        }
+
+
+        .result-text {
+
+            line-height: 1.7;
+
+            color:
+                #c9d1d9;
+
+            white-space: pre-wrap;
+
+        }
+
+
+        .result-source {
+
+            margin-top: 15px;
+
+            color:
+                #8b949e;
+
+            font-size: 12px;
+
+        }
+
+
+        .question-display {
+
+            background:
+                #21262d;
+
+            border-radius: 8px;
+
+            padding: 15px;
+
+            margin-bottom: 20px;
+
+            color:
+                #e6edf3;
+
+        }
+
+
+        /* =========================================
+           EMPTY STATE
+        ========================================= */
+
+        .empty {
+
+            color:
+                #8b949e;
+
+            background:
+                #161b22;
+
+            border:
+                1px dashed #30363d;
+
+            padding: 25px;
+
+            border-radius: 10px;
+
+            text-align: center;
+
+        }
+
+
+        /* =========================================
+           RESPONSIVE
+        ========================================= */
+
+        @media (max-width: 800px) {
+
+            .sidebar {
+
+                position: relative;
+
+                width: 100%;
+
+                min-height: auto;
+
+            }
+
+
+            .layout {
+
+                display: block;
+
+            }
+
+
+            .main {
+
+                margin-left: 0;
+
+                width: 100%;
+
+                padding: 25px;
+
+            }
+
+
+            .stats {
+
+                grid-template-columns:
+                    1fr;
+
+            }
+
+
+            .question-form {
+
+                flex-direction: column;
+
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<div class="layout">
+
+
+    <!-- =================================================
+         SIDEBAR
+    ================================================== -->
+
+    <aside class="sidebar">
+
+
+        <div class="logo">
+
+            ⚙ Project Workspace
+
+        </div>
+
+
+        <div class="sidebar-text">
+
+            Upload project documents to build
+            your project knowledge base.
+
+        </div>
+
+
+        <div class="upload-title">
+
+            📄 Upload Project Documents
+
+        </div>
+
+
+        <form
+            action="/upload"
+            method="POST"
+            enctype="multipart/form-data"
+        >
+
+
+            <input
+                class="file-input"
+                type="file"
+                name="files"
+                accept=".pdf,.docx,.csv,.txt"
+                multiple
+                required
+            >
+
+
+            <button
+                class="upload-button"
+                type="submit"
+            >
+
+                Upload Documents
+
+            </button>
+
+
+        </form>
+
+
+        {% if uploaded_files %}
+
+        <div class="file-list">
+
+
+            {% for file in uploaded_files %}
+
+            <div class="file-card">
+
+                📄 {{ file }}
+
+            </div>
+
+            {% endfor %}
+
+
+        </div>
+
+        {% endif %}
+
+
+    </aside>
+
+
+
+    <!-- =================================================
+         MAIN
+    ================================================== -->
+
+    <main class="main">
+
+
+        <!-- HEADER -->
+
+        <div class="header">
+
+            <h1>
+
+                🔎 AI Project Intelligence
+                & Risk Advisor
+
+            </h1>
+
+
+            <p>
+
+                Transform project documents into
+                actionable project intelligence using RAG.
+
+            </p>
+
+        </div>
+
+
+
+        <!-- =================================================
+             STATISTICS
+        ================================================== -->
+
+        <div class="stats">
+
+
+            <div class="stat-card">
+
+                <div class="stat-title">
+
+                    DOCUMENT CHUNKS
+
+                </div>
+
+
+                <div class="stat-value">
+
+                    {{ chunk_count }}
+
+                </div>
+
+            </div>
+
+
+            <div class="stat-card">
+
+                <div class="stat-title">
+
+                    EMBEDDING DIMENSIONS
+
+                </div>
+
+
+                <div class="stat-value">
+
+                    {{ embedding_dimension }}
+
+                </div>
+
+            </div>
+
+
+            <div class="stat-card">
+
+                <div class="stat-title">
+
+                    KNOWLEDGE BASE CHUNKS
+
+                </div>
+
+
+                <div class="stat-value">
+
+                    {{ total_chunks }}
+
+                </div>
+
+            </div>
+
+
+        </div>
+
+
+
+        <!-- =================================================
+             MESSAGE
+        ================================================== -->
+
+        {% if upload_message %}
+
+        <div class="message">
+
+            ✅ {{ upload_message }}
+
+        </div>
+
+        {% endif %}
+
+
+
+        <!-- =================================================
+             DOCUMENT CHUNKS
+        ================================================== -->
+
+        {% if chunks %}
+
+        <div class="section">
+
+
+            <div class="section-title">
+
+                🧩 Document Chunks
+
+            </div>
+
+
+            {% for chunk in chunks %}
+
+
+            <div class="chunk-card">
+
+
+                <div class="chunk-header">
+
+
+                    <div class="chunk-number">
+
+                        Chunk {{ loop.index }}
+
+                    </div>
+
+
+                    <div class="source">
+
+                        📁 Source:
+                        {{ chunk.source }}
+
+                    </div>
+
+
+                </div>
+
+
+                <div class="chunk-text">
+
+                    {{ chunk.text }}
+
+                </div>
+
+
+            </div>
+
+
+            {% endfor %}
+
+
+        </div>
+
+        {% endif %}
+
+
+
+        <!-- =================================================
+             QUESTION SECTION
+        ================================================== -->
+
+        <div class="section">
+
+
+            <div class="section-title">
+
+                🔍 Project Intelligence
+
+            </div>
+
+
+            <div class="question-box">
+
+
+                <p>
+
+                    Ask a question about your
+                    uploaded project documents.
+
+                </p>
+
+
+                <form
+                    class="question-form"
+                    action="/ask"
+                    method="POST"
+                >
+
+
+                    <input
+                        class="question-input"
+                        type="text"
+                        name="question"
+                        placeholder="Example: What are the current project risks?"
+                        required
+                    >
+
+
+                    <button
+                        class="ask-button"
+                        type="submit"
+                    >
+
+                        🔎 Analyze Project
+
+                    </button>
+
+
+                </form>
+
+
+            </div>
+
+
+        </div>
+
+
+
+        <!-- =================================================
+             SEARCH RESULTS
+        ================================================== -->
+
+        {% if question %}
+
+
+        <div class="section">
+
+
+            <div class="section-title">
+
+                🎯 Search Results
+
+            </div>
+
+
+            <div class="question-display">
+
+                <strong>
+                    Your Question:
+                </strong>
+
+                <br><br>
+
+                {{ question }}
+
+            </div>
+
+
+            {% if results %}
+
+
+                {% for result in results %}
+
+
+                <div class="result-card">
+
+
+                    <div class="result-title">
+
+                        🔹 Result {{ loop.index }}
+
+                    </div>
+
+
+                    <div class="result-text">
+
+                        {{ result.text }}
+
+                    </div>
+
+
+                    <div class="result-source">
+
+                        📁 Source:
+                        {{ result.source }}
+
+                    </div>
+
+
+                </div>
+
+
+                {% endfor %}
+
+
+            {% else %}
+
+
+                <div class="empty">
+
+                    No relevant project information
+                    was found.
+
+                </div>
+
+
+            {% endif %}
+
+
+        </div>
+
+
+        {% endif %}
+
+
+    </main>
+
+
+</div>
+
+
+</body>
+
+</html>
