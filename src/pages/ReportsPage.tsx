@@ -88,7 +88,7 @@ export const ReportsPage: React.FC<ReportsPageProps> = ({
 
   const handleDownload = () => {
     if (!activeOutput || !hasDocuments) return;
-    downloadSinglePDF('Project_Documentation_Documenataion', activeOutput);
+    downloadSinglePDF('Project_Documentation_Report', activeOutput);
   };
 
   const handleDownloadTxt = () => {
@@ -97,7 +97,7 @@ export const ReportsPage: React.FC<ReportsPageProps> = ({
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = 'HealthPulse_Documentation_UserStories_RiskRegister.txt';
+    link.download = 'Project_Documentation_UserStories_RiskRegister.txt';
     link.click();
     URL.revokeObjectURL(url);
   };
@@ -112,7 +112,7 @@ export const ReportsPage: React.FC<ReportsPageProps> = ({
               DOCUMENTATION GENERATION AGENT
             </span>
           </div>
-          <h2 className="text-lg font-bold text-white tracking-tight">Project Documentation & Master Documentation</h2>
+          <h2 className="text-lg font-bold text-white tracking-tight">Project Documentation & Master Reports</h2>
           <p className="text-xs text-slate-400">
             Synthesized User Stories, Risk Register, Action Items, and Executive Project Intelligence derived from ingested documents.
           </p>
@@ -149,7 +149,7 @@ export const ReportsPage: React.FC<ReportsPageProps> = ({
               </span>
             </div>
             <h3 className="text-xl font-bold text-white tracking-tight">
-              Master Project Intelligence & Documentation Documentation
+              Master Project Intelligence & Documentation
             </h3>
             <p className="text-xs text-slate-300 mt-2 leading-relaxed">
               {hasDocuments ? (
