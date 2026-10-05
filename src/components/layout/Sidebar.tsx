@@ -56,7 +56,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     {
       heading: 'SYSTEM & SPEC',
       items: [
-        { id: 'roadmap', label: 'Architecture & Milestones', icon: Layers },
+        { id: 'roadmap', label: 'Architecture & Spec', icon: Layers },
         { id: 'settings', label: 'Settings', icon: Settings },
       ],
     },

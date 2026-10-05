@@ -290,17 +290,17 @@ export function downloadBlueprintPDF() {
   // 2. Technology Stack Architecture
   addSectionHeading('2. Technology Stack Architecture (12 Production Layers)');
   const techStackItems = [
-    { layer: 'Frontend', tech: 'React.js + Vite', purpose: 'Dashboard, document upload, agent selection, Q&A' },
-    { layer: 'Backend', tech: 'FastAPI + Uvicorn', purpose: 'REST APIs and application logic' },
-    { layer: 'AI / LLM', tech: 'Google Gemini API', purpose: 'Conversational answers and structured agent outputs' },
+    { layer: 'Frontend', tech: 'Streamlit (Python)', purpose: 'Interactive dashboard, document upload, multi-agent triggers, and conversational Q&A' },
+    { layer: 'Backend', tech: 'FastAPI + Uvicorn', purpose: 'High-throughput async REST APIs and application logic' },
+    { layer: 'AI / LLM', tech: 'Google Gemini API', purpose: 'Conversational reasoning and structured multi-agent outputs' },
     { layer: 'RAG', tech: 'ChromaDB', purpose: 'Project-document vector storage and retrieval' },
     { layer: 'Embeddings', tech: 'Sentence Transformers (all-MiniLM-L6-v2)', purpose: 'Convert documents/questions into embeddings' },
-    { layer: 'Document Processing', tech: 'Python', purpose: 'PDF/DOCX/CSV/TXT ingestion and processing' },
-    { layer: 'Agent Framework', tech: 'LangGraph', purpose: 'Agent routing and workflow orchestration' },
+    { layer: 'Document Processing', tech: 'Python', purpose: 'PDF/DOCX/XLSX/CSV/TXT ingestion and chunking' },
+    { layer: 'Agent Framework', tech: 'LangGraph', purpose: 'Agent routing and state graph workflow orchestration' },
     { layer: 'Agents', tech: 'Python', purpose: 'Scope, Risk, Blocker/Action, Documentation, Health Scoring' },
     { layer: 'Database / Storage', tech: 'ChromaDB + project file storage', purpose: 'Project-specific knowledge and uploaded documents' },
     { layer: 'Environment', tech: '.env + python-dotenv', purpose: 'Secure API-key management' },
-    { layer: 'API Communication', tech: 'REST + JSON', purpose: 'React <-> FastAPI communication' },
+    { layer: 'API Communication', tech: 'REST + JSON', purpose: 'Streamlit <-> FastAPI communication' },
     { layer: 'Version Control', tech: 'Git + GitHub', purpose: 'Source-code and project management' },
   ];
 
@@ -345,52 +345,6 @@ export function downloadBlueprintPDF() {
     const wrappedMod = doc.splitTextToSize(mod.desc, maxLineWidth - 4);
     doc.text(wrappedMod, margin + 4, cursorY);
     cursorY += wrappedMod.length * 4.2 + 2;
-  });
-
-  // 3. 4 Project Milestones
-  addSectionHeading('3. Development Milestones & Timeline (Weeks 1-8)');
-  const milestones = [
-    { name: 'Milestone 1 (Weeks 1-2)', title: 'Architecture, Document Ingestion & RAG Pipeline', deliverable: 'Multi-format document ingestion engine and RAG vector store indexing.' },
-    { name: 'Milestone 2 (Weeks 3-4)', title: 'Multi-Agent Extraction & Risk Forecasting Engine', deliverable: 'Specialized Scope, Risk, and Blocker agents with cross-document validation.' },
-    { name: 'Milestone 3 (Weeks 5-6)', title: 'Documentation Generation, Health Scoring & AI Assistant', deliverable: 'Tabular User Stories & Risk Register, 5-factor Health Gauge, and Conversational Assistant.' },
-    { name: 'Milestone 4 (Weeks 7-8)', title: 'Executive Dashboard, Incremental Uploads & End-to-End Validation', deliverable: 'Complete enterprise web platform with single PDF download and end-to-end multi-agent execution.' },
-  ];
-
-  milestones.forEach((m) => {
-    checkPageBreak(12);
-    doc.setFontSize(8.5);
-    doc.setFont('Helvetica', 'bold');
-    doc.setTextColor(15, 23, 42);
-    doc.text(`${m.name} — ${m.title}`, margin, cursorY);
-    cursorY += 4.2;
-
-    doc.setFont('Helvetica', 'normal');
-    doc.setTextColor(71, 85, 105);
-    doc.text(`Deliverable: ${m.deliverable}`, margin + 4, cursorY);
-    cursorY += 6.5;
-  });
-
-  // 4. Formal Evaluation Criteria
-  addSectionHeading('4. Verification & Evaluation Rubric');
-  const criteria = [
-    { title: 'Scope, Risk & Blocker Extraction Accuracy', status: 'VERIFIED', desc: 'Reliably extracts project goals, timelines, 7 risk classifications, and unresolved blockers from uploaded files.' },
-    { title: 'Quality of Auto-Generated Documentation', status: 'VERIFIED', desc: 'Synthesizes clean tabular User Stories, formal Risk Register, and Action Items with instant single PDF download.' },
-    { title: 'Health Scoring Formula Integrity', status: 'VERIFIED', desc: 'Implements 5-factor weighted algorithm (Risk, Schedule, Scope, Blocker, Resource) with trend tracking.' },
-    { title: 'Conversational Grounding & Citations', status: 'VERIFIED', desc: 'Ensures responses cite exact document names, pages, and chunks with zero hallucination.' },
-  ];
-
-  criteria.forEach((c) => {
-    checkPageBreak(12);
-    doc.setFontSize(8.5);
-    doc.setFont('Helvetica', 'bold');
-    doc.setTextColor(15, 23, 42);
-    doc.text(`[${c.status}] ${c.title}`, margin, cursorY);
-    cursorY += 4.2;
-
-    doc.setFont('Helvetica', 'normal');
-    doc.setTextColor(71, 85, 105);
-    doc.text(c.desc, margin + 4, cursorY);
-    cursorY += 6.5;
   });
 
   // Page numbering

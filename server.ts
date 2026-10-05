@@ -193,7 +193,7 @@ app.get('/api/documents', (req: Request, res: Response) => {
 app.post(
   '/api/upload',
   (req, res, next) => {
-    upload.array('files', 25)(req, res, (err: any) => {
+    upload.array('files', 25)(req as any, res as any, (err: any) => {
       if (err) {
         console.error('[Upload Middleware Error]:', err);
         return res.status(400).json({

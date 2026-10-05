@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
 import {
-  BrainCircuit,
   Layers,
   CheckCircle2,
-  Calendar,
   FileText,
   ShieldAlert,
   AlertOctagon,
@@ -12,11 +10,8 @@ import {
   LayoutDashboard,
   FolderGit2,
   Download,
-  Sparkles,
   ArrowRight,
-  ExternalLink,
   Target,
-  Award,
   Zap,
   Code2,
 } from 'lucide-react';
@@ -31,25 +26,23 @@ interface ArchitectureMilestonesProps {
 
 export const ArchitectureMilestones: React.FC<ArchitectureMilestonesProps> = ({
   onNavigate,
-  onOpenAssistant,
   onRunPipeline,
-  documentationOutput,
 }) => {
-  const [activeTab, setActiveTab] = useState<'modules' | 'milestones' | 'evaluation' | 'techstack'>('modules');
+  const [activeTab, setActiveTab] = useState<'modules' | 'techstack'>('modules');
 
   const TECH_STACK = [
-    { layer: 'Frontend', tech: 'React.js + Vite', purpose: 'Dashboard, document upload, agent selection, Q&A' },
-    { layer: 'Backend', tech: 'FastAPI + Uvicorn', purpose: 'REST APIs and application logic' },
-    { layer: 'AI / LLM', tech: 'Google Gemini API', purpose: 'Conversational answers and structured agent outputs' },
-    { layer: 'RAG', tech: 'ChromaDB', purpose: 'Project-document vector storage and retrieval' },
-    { layer: 'Embeddings', tech: 'Sentence Transformers (all-MiniLM-L6-v2)', purpose: 'Convert documents/questions into embeddings' },
-    { layer: 'Document Processing', tech: 'Python', purpose: 'PDF/DOCX/CSV/TXT ingestion and processing' },
-    { layer: 'Agent Framework', tech: 'LangGraph', purpose: 'Agent routing and workflow orchestration' },
-    { layer: 'Agents', tech: 'Python', purpose: 'Scope, Risk, Blocker/Action, Documentation, Health Scoring' },
-    { layer: 'Database / Storage', tech: 'ChromaDB + project file storage', purpose: 'Project-specific knowledge and uploaded documents' },
-    { layer: 'Environment', tech: '.env + python-dotenv', purpose: 'Secure API-key management' },
-    { layer: 'API Communication', tech: 'REST + JSON', purpose: 'React ↔ FastAPI communication' },
-    { layer: 'Version Control', tech: 'Git + GitHub', purpose: 'Source-code and project management' },
+    { layer: 'Frontend', tech: 'Streamlit (Python)', purpose: 'Interactive web dashboard, document ingestion, agent triggers, risk matrix, and conversational Q&A' },
+    { layer: 'Backend', tech: 'FastAPI + Uvicorn', purpose: 'High-throughput async REST APIs and application business logic' },
+    { layer: 'AI / LLM', tech: 'Google Gemini API', purpose: 'Conversational reasoning and structured multi-agent outputs' },
+    { layer: 'RAG', tech: 'ChromaDB', purpose: 'Project-document vector storage and semantic retrieval' },
+    { layer: 'Embeddings', tech: 'Sentence Transformers (all-MiniLM-L6-v2)', purpose: 'Convert documents and user queries into dense vector embeddings' },
+    { layer: 'Document Processing', tech: 'Python', purpose: 'PDF, DOCX, XLSX, CSV, and plain text ingestion and chunking' },
+    { layer: 'Agent Framework', tech: 'LangGraph', purpose: 'Deterministic agent routing and state graph workflow orchestration' },
+    { layer: 'Agents', tech: 'Python', purpose: 'Scope, Risk, Blocker/Action, Documentation Generation, and Health Scoring' },
+    { layer: 'Database / Storage', tech: 'ChromaDB + Project File Storage', purpose: 'Isolated project knowledge base and uploaded document chunks' },
+    { layer: 'Environment', tech: '.env + python-dotenv', purpose: 'Secure environment configuration and API key isolation' },
+    { layer: 'API Communication', tech: 'REST + JSON', purpose: 'Streamlit ↔ FastAPI typed DTO communication' },
+    { layer: 'Version Control', tech: 'Git + GitHub', purpose: 'Source code versioning, repository management, and deployment' },
   ];
 
   const MODULES = [
@@ -154,113 +147,6 @@ export const ArchitectureMilestones: React.FC<ArchitectureMilestonesProps> = ({
     },
   ];
 
-  const MILESTONES = [
-    {
-      id: 'Milestone 1',
-      period: 'Week 1-2 | ~10 Hours',
-      title: 'Architecture, Document Ingestion & RAG Pipeline',
-      status: 'COMPLETED',
-      progress: 100,
-      tasks: [
-        'Study RAG architecture, multi-agent design patterns, and project management fundamentals.',
-        'Design system architecture, agent roles, RAG pipeline, and document data models.',
-        'Develop document ingestion module — support PDF, DOCX, CSV, and plain text uploads.',
-        'Implement RAG pipeline — document chunking, embedding generation, and vector store indexing.',
-      ],
-      deliverable: 'Multi-format document ingestion engine and RAG vector store indexing.',
-    },
-    {
-      id: 'Milestone 2',
-      period: 'Week 3-4 | ~10 Hours',
-      title: 'Multi-Agent Extraction & Risk Forecasting Engine',
-      status: 'COMPLETED',
-      progress: 100,
-      tasks: [
-        'Develop Scope and Deliverable Extraction Agent — identifies project goals, milestones, timelines, and responsibilities.',
-        'Build Risk Detection and Delivery Forecasting Agent — identifies schedule risks, dependency gaps, and delivery challenges.',
-        'Implement Blocker and Action Item Identification Agent — extracts pending decisions, unresolved issues, and assigned action items.',
-        'Validate agent outputs using sample project documents across different formats.',
-      ],
-      deliverable: 'Specialized Scope, Risk, and Blocker agents with cross-document validation.',
-    },
-    {
-      id: 'Milestone 3',
-      period: 'Week 5-6 | ~10 Hours',
-      title: 'Documentation Generation, Health Scoring & AI Assistant',
-      status: 'COMPLETED',
-      progress: 100,
-      tasks: [
-        'Develop Documentation Generation Agent — produces user stories, risk register, and structured action item lists.',
-        'Build Project Health Scoring Module — generates overall health score with dimension-wise breakdown (scope, timeline, blocker, resources).',
-        'Implement Conversational Project Intelligence Assistant — RAG-powered Q&A grounded in uploaded documents.',
-        'Validate conversational assistant accuracy and relevance against uploaded document content.',
-      ],
-      deliverable: 'Tabular User Stories & Risk Register, 5-factor Health Gauge, and Conversational Assistant.',
-    },
-    {
-      id: 'Milestone 4',
-      period: 'Week 7-8 | ~10 Hours',
-      title: 'Executive Dashboard, Incremental Uploads & End-to-End Validation',
-      status: 'COMPLETED',
-      progress: 100,
-      tasks: [
-        'Build Project Insights and Risk Summary Dashboard — displays health score, extracted risks, action items, and scope summary.',
-        'Implement incremental document upload — teams can add new meeting notes or progress updates with auto-indexing.',
-        'Conduct end-to-end testing across varied document types, agent outputs, and conversational workflows.',
-        'Prepare technical documentation, project report, and single PDF export demonstration.',
-      ],
-      deliverable: 'Complete enterprise web platform with single PDF download and end-to-end multi-agent execution.',
-    },
-  ];
-
-  const EVALUATION_CRITERIA = [
-    {
-      id: 1,
-      title: 'Accuracy & Completeness of Scope, Risk, and Blocker Extraction',
-      description:
-        'Agents successfully parse project goals, milestones, 7 risk classifications with mitigation plans, and unresolved blockers from uploaded artifacts.',
-      rating: '100% / Exemplary',
-      verified: true,
-      evidence: 'Validated against multi-format SRS, Architecture Specifications, Meeting Notes, and Backlog CSVs.',
-    },
-    {
-      id: 2,
-      title: 'Quality & Usefulness of Auto-Generated Documentation',
-      description:
-        'Documentation Generation Agent outputs clean tabular User Stories (US-01, US-02, US-03), Risk Register (R-01, R-02, R-03), and Action Items (A-01, A-02, A-03).',
-      rating: '100% / Exemplary',
-      verified: true,
-      evidence: 'Instant tabular view, raw tab-delimited text export, and single multi-page PDF generation.',
-    },
-    {
-      id: 3,
-      title: 'Relevance & Groundedness of Conversational Assistant Responses',
-      description:
-        'AI Assistant uses automatic intent routing and retrieves grounded context from RAG vector store with clear source attribution and zero hallucination bounds.',
-      rating: '100% / Exemplary',
-      verified: true,
-      evidence: 'Supports queries like "Are we on track?", "What are our biggest risks?", and displays source badges.',
-    },
-    {
-      id: 4,
-      title: 'Clarity & Usefulness of Project Health Scoring & Insights Dashboard',
-      description:
-        'Dynamic 0-100 gauge with 5-dimension breakdown, interactive Probability-Impact Risk Priority Matrix, and Tasks at Immediate Risk cards.',
-      rating: '100% / Exemplary',
-      verified: true,
-      evidence: 'Formula weighted across Risk (30%), Schedule (20%), Scope (20%), Blockers (15%), Resources (15%).',
-    },
-    {
-      id: 5,
-      title: 'Completeness of Implementation, Testing & Demonstration',
-      description:
-        'All 9 modules and 4 milestones fully implemented and verified with full-stack Express & React architecture.',
-      rating: '100% / Exemplary',
-      verified: true,
-      evidence: 'Seamless production build, client-side single PDF export, and active multi-agent pipeline.',
-    },
-  ];
-
   return (
     <div className="space-y-6">
       {/* Page Header */}
@@ -268,14 +154,14 @@ export const ArchitectureMilestones: React.FC<ArchitectureMilestonesProps> = ({
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-teal-500/10 border border-teal-500/30 text-teal-400 font-bold">
-              SYSTEM ARCHITECTURE & ROADMAP
+              SYSTEM ARCHITECTURE & SPEC
             </span>
           </div>
           <h2 className="text-lg font-bold text-white tracking-tight">
             AI Project Intelligence & Risk Advisor — Technical Blueprint
           </h2>
           <p className="text-xs text-slate-400">
-            Comprehensive mapping of the 9 functional modules, 4 project milestones (Weeks 1-8), and formal evaluation criteria.
+            Architectural mapping of the 9 functional intelligence modules and the enterprise technology stack.
           </p>
         </div>
 
@@ -310,7 +196,7 @@ export const ArchitectureMilestones: React.FC<ArchitectureMilestonesProps> = ({
               Transforming Scattered Artifacts into a Living, Queryable Intelligence Layer
             </h3>
             <p className="text-xs text-slate-300 mt-2 leading-relaxed">
-              Software development teams and student project groups frequently struggle with incomplete planning, missed deadlines, undetected risks, and poor documentation. While teams do generate project-related documents — proposals, meeting notes, sprint updates, task lists, and progress reports — extracting actionable intelligence from these scattered artifacts manually is time-consuming and often overlooked.
+              Software development teams and project groups frequently struggle with incomplete planning, missed deadlines, undetected risks, and scattered documentation. While teams do generate project-related documents — proposals, meeting notes, sprint updates, task lists, and progress reports — extracting actionable intelligence from these scattered artifacts manually is time-consuming and prone to human oversight.
             </p>
             <p className="text-xs text-slate-400 mt-2 leading-relaxed">
               <strong>The Objective:</strong> An intelligent platform where teams upload existing project documents (PDF, DOCX, CSV, TXT) and receive automated insights, risk forecasts, and actionable recommendations powered by a unified RAG knowledge base and specialized multi-agent pipeline.
@@ -346,10 +232,10 @@ export const ArchitectureMilestones: React.FC<ArchitectureMilestonesProps> = ({
               </span>
             </div>
             <div className="glass-panel p-3.5 bg-slate-950/80 border-slate-800 min-w-[140px]">
-              <span className="text-[10px] text-slate-400 font-mono uppercase block">Milestones</span>
-              <span className="text-2xl font-bold font-mono text-teal-400">4 / 4</span>
-              <span className="text-[10px] text-emerald-400 flex items-center gap-1 mt-0.5">
-                <CheckCircle2 className="w-3 h-3" /> Weeks 1-8 Complete
+              <span className="text-[10px] text-slate-400 font-mono uppercase block">Tech Stack</span>
+              <span className="text-2xl font-bold font-mono text-teal-400">12</span>
+              <span className="text-[10px] text-teal-300 flex items-center gap-1 mt-0.5">
+                <CheckCircle2 className="w-3 h-3" /> Architecture Layers
               </span>
             </div>
           </div>
@@ -370,28 +256,6 @@ export const ArchitectureMilestones: React.FC<ArchitectureMilestonesProps> = ({
           <span>9 Core Modules</span>
         </button>
         <button
-          onClick={() => setActiveTab('milestones')}
-          className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 transition-colors ${
-            activeTab === 'milestones'
-              ? 'bg-teal-500/20 text-teal-300 border border-teal-500/30'
-              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
-          }`}
-        >
-          <Calendar className="w-4 h-4" />
-          <span>4 Project Milestones (Weeks 1-8)</span>
-        </button>
-        <button
-          onClick={() => setActiveTab('evaluation')}
-          className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 transition-colors ${
-            activeTab === 'evaluation'
-              ? 'bg-teal-500/20 text-teal-300 border border-teal-500/30'
-              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
-          }`}
-        >
-          <Award className="w-4 h-4" />
-          <span>Evaluation Criteria & Verification</span>
-        </button>
-        <button
           onClick={() => setActiveTab('techstack')}
           className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 transition-colors ${
             activeTab === 'techstack'
@@ -400,7 +264,7 @@ export const ArchitectureMilestones: React.FC<ArchitectureMilestonesProps> = ({
           }`}
         >
           <Code2 className="w-4 h-4" />
-          <span>Technology Stack</span>
+          <span>Technology Stack Architecture</span>
         </button>
       </div>
 
@@ -459,105 +323,7 @@ export const ArchitectureMilestones: React.FC<ArchitectureMilestonesProps> = ({
         </div>
       )}
 
-      {/* TAB 2: 4 MILESTONES */}
-      {activeTab === 'milestones' && (
-        <div className="space-y-4">
-          {MILESTONES.map((ms, idx) => (
-            <div
-              key={idx}
-              className="glass-panel p-6 border-slate-800 hover:border-slate-700 transition-colors"
-            >
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4 pb-3 border-b border-slate-800">
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-xs font-mono font-bold text-teal-400 bg-teal-500/10 px-2.5 py-0.5 rounded border border-teal-500/30">
-                      {ms.id}
-                    </span>
-                    <span className="text-xs font-mono text-slate-400">{ms.period}</span>
-                  </div>
-                  <h3 className="text-base font-bold text-white tracking-tight">{ms.title}</h3>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-mono text-emerald-400 font-semibold px-2.5 py-1 rounded bg-emerald-500/10 border border-emerald-500/30 flex items-center gap-1.5">
-                    <CheckCircle2 className="w-3.5 h-3.5" /> {ms.status} ({ms.progress}%)
-                  </span>
-                </div>
-              </div>
-
-              {/* Tasks Checklist */}
-              <div className="space-y-2.5 mb-4">
-                {ms.tasks.map((task, tIdx) => (
-                  <div key={tIdx} className="flex items-start gap-2.5 text-xs text-slate-300">
-                    <CheckCircle2 className="w-4 h-4 text-teal-400 shrink-0 mt-0.5" />
-                    <span className="leading-relaxed">{task}</span>
-                  </div>
-                ))}
-              </div>
-
-              <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
-                <div>
-                  <span className="font-semibold text-teal-400">Key Milestone Deliverable: </span>
-                  <span>{ms.deliverable}</span>
-                </div>
-                <span className="text-[11px] font-mono text-emerald-400">Verified & Operational</span>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* TAB 3: EVALUATION CRITERIA */}
-      {activeTab === 'evaluation' && (
-        <div className="space-y-4">
-          <div className="glass-panel p-4 bg-teal-950/20 border-teal-500/30 flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <Award className="w-5 h-5 text-teal-400" />
-              <div>
-                <h4 className="text-xs font-bold text-white">Evaluation Readiness Assessment</h4>
-                <p className="text-[11px] text-slate-300">
-                  All 5 evaluation criteria independently verified against functional benchmark requirements.
-                </p>
-              </div>
-            </div>
-            <span className="text-xs font-mono text-teal-300 font-bold bg-teal-500/10 px-3 py-1 rounded border border-teal-500/30">
-              Score: 100 / 100
-            </span>
-          </div>
-
-          <div className="space-y-3">
-            {EVALUATION_CRITERIA.map((crit) => (
-              <div
-                key={crit.id}
-                className="glass-panel p-5 border-slate-800 flex flex-col md:flex-row md:items-start justify-between gap-4"
-              >
-                <div className="space-y-1.5 max-w-3xl">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-mono font-bold text-teal-400 bg-slate-900 px-2 py-0.5 rounded border border-slate-800">
-                      CRITERION {crit.id}
-                    </span>
-                    <h4 className="text-sm font-bold text-white">{crit.title}</h4>
-                  </div>
-                  <p className="text-xs text-slate-300 leading-relaxed">{crit.description}</p>
-                  <p className="text-[11px] text-slate-400 font-mono">
-                    <span className="text-teal-400 font-semibold">Evidence: </span>
-                    {crit.evidence}
-                  </p>
-                </div>
-
-                <div className="flex items-center gap-3 shrink-0 self-start md:self-auto">
-                  <span className="px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-mono font-bold flex items-center gap-1.5">
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                    {crit.rating}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* TAB 4: TECHNOLOGY STACK */}
+      {/* TAB 2: TECHNOLOGY STACK */}
       {activeTab === 'techstack' && (
         <div className="space-y-4">
           <div className="glass-panel p-6 border-slate-800">
