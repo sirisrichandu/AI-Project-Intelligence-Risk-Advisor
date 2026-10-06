@@ -109,7 +109,8 @@ class ChatMessageItem(BaseModel):
     sources: Optional[List[str]] = None
 
 class AskRequest(BaseModel):
-    question: str
+    question: Optional[str] = ""
+    query: Optional[str] = None
     history: Optional[List[ChatMessageItem]] = None
 
 class AskResponse(BaseModel):

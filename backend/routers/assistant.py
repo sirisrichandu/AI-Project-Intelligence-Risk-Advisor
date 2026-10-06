@@ -11,7 +11,7 @@ async def get_scope():
 
 @router.post("/ask", response_model=AskResponse)
 async def ask_assistant(req: AskRequest):
-    question = req.question
+    question = (req.query or req.question or "").strip()
     q_lower = question.lower()
 
     agent_used = "Conversational Router Agent"

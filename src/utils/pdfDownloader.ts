@@ -290,17 +290,17 @@ export function downloadBlueprintPDF() {
   // 2. Technology Stack Architecture
   addSectionHeading('2. Technology Stack Architecture (12 Production Layers)');
   const techStackItems = [
-    { layer: 'Frontend', tech: 'Streamlit (Python)', purpose: 'Interactive dashboard, document upload, multi-agent triggers, and conversational Q&A' },
+    { layer: 'Frontend', tech: 'React (TypeScript + Vite + Tailwind CSS)', purpose: 'Interactive dashboard, document upload, multi-agent triggers, and conversational Q&A' },
     { layer: 'Backend', tech: 'FastAPI + Uvicorn', purpose: 'High-throughput async REST APIs and application logic' },
     { layer: 'AI / LLM', tech: 'Google Gemini API', purpose: 'Conversational reasoning and structured multi-agent outputs' },
     { layer: 'RAG', tech: 'ChromaDB', purpose: 'Project-document vector storage and retrieval' },
     { layer: 'Embeddings', tech: 'Sentence Transformers (all-MiniLM-L6-v2)', purpose: 'Convert documents/questions into embeddings' },
-    { layer: 'Document Processing', tech: 'Python', purpose: 'PDF/DOCX/XLSX/CSV/TXT ingestion and chunking' },
-    { layer: 'Agent Framework', tech: 'LangGraph', purpose: 'Agent routing and state graph workflow orchestration' },
+    { layer: 'Document Processing', tech: 'Python (pypdf, docx, CSV)', purpose: 'PDF/DOCX/XLSX/CSV/TXT ingestion and semantic chunking' },
+    { layer: 'Agent Framework', tech: 'LangGraph & Multi-Agent Architecture', purpose: 'Agent routing and state graph workflow orchestration' },
     { layer: 'Agents', tech: 'Python', purpose: 'Scope, Risk, Blocker/Action, Documentation, Health Scoring' },
-    { layer: 'Database / Storage', tech: 'ChromaDB + project file storage', purpose: 'Project-specific knowledge and uploaded documents' },
+    { layer: 'Database / Storage', tech: 'ChromaDB Persistent Vector Store (chroma.sqlite3)', purpose: 'Project-specific knowledge and uploaded documents' },
     { layer: 'Environment', tech: '.env + python-dotenv', purpose: 'Secure API-key management' },
-    { layer: 'API Communication', tech: 'REST + JSON', purpose: 'Streamlit <-> FastAPI communication' },
+    { layer: 'API Communication', tech: 'REST + JSON', purpose: 'React <-> FastAPI typed DTO communication' },
     { layer: 'Version Control', tech: 'Git + GitHub', purpose: 'Source-code and project management' },
   ];
 

@@ -35,10 +35,13 @@ The server will be live at:
 
 ```
 backend/
-├── main.py                     # FastAPI entrypoint & CORS configuration
+├── main.py                     # FastAPI entrypoint, CORS configuration & routes
 ├── models.py                   # Pydantic v2 data schemas
 ├── store.py                    # Thread-safe in-memory project intelligence store
-├── requirements.txt            # Python dependencies
+├── chroma_service.py           # Persistent ChromaDB vector store manager
+├── document_parser.py          # PDF / DOCX text extraction & semantic chunking
+├── chroma_db/                  # Persistent ChromaDB storage (chroma.sqlite3 & vector_store.json)
+├── requirements.txt            # Python dependencies (FastAPI, ChromaDB, pypdf, etc.)
 ├── Dockerfile                  # Production container definition
 ├── agents/                     # Multi-Agent Intelligence Engines
 │   ├── scope_agent.py          # Scope, objectives & requirements extraction
@@ -47,7 +50,7 @@ backend/
 │   ├── health_engine.py        # 5-dimension composite health score engine
 │   └── doc_gen_agent.py        # User stories & master dossier synthesizer
 └── routers/                    # REST API Endpoints
-    ├── documents.py            # Upload, list, delete, and clear documents
+    ├── documents.py            # Upload (PDF/DOCX/TXT), chunking, ChromaDB indexing
     ├── pipeline.py             # Multi-agent autonomous pipeline execution
     ├── risks.py                # Risk registers & priority matrix coordinates
     ├── blockers.py             # Active project impediments
@@ -56,6 +59,25 @@ backend/
     ├── reports.py              # Synthesized dossiers & report generation
     └── assistant.py            # Conversational AI assistant with agent routing
 ```
+
+---
+
+## 💻 Connecting with React Frontend
+
+Your React frontend connects directly to this FastAPI backend via REST API (`/api`):
+
+1. **Start FastAPI Backend:**
+   ```bash
+   uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload
+   ```
+
+2. **Start React Frontend:**
+   ```bash
+   npm run dev
+   ```
+
+The React frontend automatically communicates with `http://localhost:8000` (or proxy), utilizing the full ChromaDB vector database and multi-agent pipeline!
+
 
 ---
 
