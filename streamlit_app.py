@@ -530,7 +530,7 @@ elif page == "💬 Project Advisor Chat":
         with st.chat_message(msg["role"]):
             st.markdown(msg["content"])
             if "agent" in msg:
-                st.caption(f"Engine: {msg['agent']} | Sources: {', '.join(msg.get('sources', []))}")
+                st.caption(f"Engine: {msg['agent']}")
 
     prompt = st.chat_input("E.g., What are the highest risks to our target deadline?")
     if prompt:
@@ -544,14 +544,12 @@ elif page == "💬 Project Advisor Chat":
                 if res:
                     answer = res.get("answer", "No answer received.")
                     agent_used = res.get("agentUsed", "Routing Agent")
-                    sources = res.get("sources", [])
                     st.markdown(answer)
-                    st.caption(f"Engine: {agent_used} | Sources: {', '.join(sources)}")
+                    st.caption(f"Engine: {agent_used}")
                     st.session_state.messages.append({
                         "role": "assistant",
                         "content": answer,
                         "agent": agent_used,
-                        "sources": sources
                     })
                 else:
                     st.error("Failed to get response from backend.")

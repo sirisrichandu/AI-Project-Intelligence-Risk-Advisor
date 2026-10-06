@@ -64,7 +64,6 @@ export const ChatDrawer: React.FC<ChatDrawerProps> = ({ isOpen, onClose, initial
             content: 'Hello! I am your **Project Intelligence & Risk Advisor**. I am grounded in your uploaded project documents. Ask me anything about project scope, risks, blockers, pending actions, deadlines, or health status.',
             timestamp: new Date().toISOString(),
             agentUsed: 'Routing Agent',
-            sources: ['HealthPulse_SRS_v2.docx', 'Sprint_04_Meeting_Notes.txt'],
           },
         ]);
       }
@@ -225,23 +224,6 @@ export const ChatDrawer: React.FC<ChatDrawerProps> = ({ isOpen, onClose, initial
               }`}
             >
               <div className="whitespace-pre-wrap font-sans">{msg.content}</div>
-
-              {/* Sources Citation */}
-              {msg.sources && msg.sources.length > 0 && (
-                <div className="mt-3 pt-2 border-t border-slate-800/80 text-[11px] text-slate-400 flex flex-wrap items-center gap-1.5">
-                  <span className="font-semibold text-slate-400 flex items-center gap-1">
-                    <FileText className="w-3 h-3 text-teal-400" /> Sources:
-                  </span>
-                  {msg.sources.map((src, i) => (
-                    <span
-                      key={i}
-                      className="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 text-[10px] font-mono border border-slate-700/60"
-                    >
-                      {src}
-                    </span>
-                  ))}
-                </div>
-              )}
 
               {/* Copy action */}
               <button

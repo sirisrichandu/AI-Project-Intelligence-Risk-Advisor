@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 from backend.store import project_store
 from backend.models import AskRequest, AskResponse
+from backend.chroma_service import chroma_service
 
 router = APIRouter(prefix="/api", tags=["assistant"])
 
@@ -49,7 +50,7 @@ async def ask_assistant(req: AskRequest):
     return AskResponse(
         answer=answer,
         agentUsed=agent_used,
-        sources=sources,
+        sources=[],
         suggestedFollowUps=[
             "What are the top 3 critical risks?",
             "How can we improve the composite health score?",

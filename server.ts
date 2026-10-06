@@ -795,14 +795,14 @@ ${projectStore.health.summary}`;
         content: answerText,
         timestamp: new Date().toISOString(),
         agentUsed: agentName,
-        sources: uniqueSources,
+        sources: [],
       }
     );
 
     res.json({
       answer: answerText,
       agentUsed: agentName,
-      sources: uniqueSources,
+      sources: [],
       routingReason: reason,
     });
   } catch (error: any) {

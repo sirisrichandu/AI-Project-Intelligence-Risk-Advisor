@@ -14,8 +14,11 @@ class ProjectDocument(BaseModel):
 
 class UploadJsonFileItem(BaseModel):
     name: str
-    content: str
+    content: Optional[str] = ""
     category: Optional[str] = None
+    base64: Optional[str] = None
+    type: Optional[str] = None
+    size: Optional[str] = None
 
 class UploadJsonRequest(BaseModel):
     files: List[UploadJsonFileItem]

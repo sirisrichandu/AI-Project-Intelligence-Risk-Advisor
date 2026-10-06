@@ -56,7 +56,6 @@ export const AssistantPage: React.FC = () => {
             content: 'Welcome to the **Project Intelligence Assistant**. I am connected directly to your RAG knowledge base. Ask me about project scope, risks, blockers, pending actions, deadlines, or health status.',
             timestamp: new Date().toISOString(),
             agentUsed: 'Routing Agent',
-            sources: ['HealthPulse_SRS_v2.docx', 'Sprint_04_Meeting_Notes.txt'],
           },
         ]);
       }
@@ -215,23 +214,6 @@ export const AssistantPage: React.FC = () => {
               }`}
             >
               <div className="whitespace-pre-wrap font-sans space-y-2">{msg.content}</div>
-
-              {/* Source References */}
-              {msg.sources && msg.sources.length > 0 && (
-                <div className="mt-3 pt-2.5 border-t border-slate-800/80 text-[11px] text-slate-400 flex flex-wrap items-center gap-1.5">
-                  <span className="font-semibold text-slate-300 flex items-center gap-1">
-                    <FileText className="w-3 h-3 text-teal-400" /> Sources:
-                  </span>
-                  {msg.sources.map((src, i) => (
-                    <span
-                      key={i}
-                      className="px-2 py-0.5 rounded bg-slate-800 text-slate-200 font-mono text-[10px] border border-slate-700"
-                    >
-                      {src}
-                    </span>
-                  ))}
-                </div>
-              )}
 
               {/* Copy button */}
               <button

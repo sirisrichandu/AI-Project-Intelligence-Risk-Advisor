@@ -10,8 +10,6 @@ import { BlockersPage } from './pages/BlockersPage';
 import { HealthScorePage } from './pages/HealthScorePage';
 import { AssistantPage } from './pages/AssistantPage';
 import { ReportsPage } from './pages/ReportsPage';
-import { SettingsPage } from './pages/SettingsPage';
-import { ArchitectureMilestones } from './pages/ArchitectureMilestones';
 import { api } from './services/api';
 import {
   ProjectSummary,
@@ -255,19 +253,6 @@ export default function App() {
               hasDocuments={documents.length > 0}
               onNavigate={(page) => setActivePage(page)}
             />
-          )}
-
-          {activePage === 'roadmap' && (
-            <ArchitectureMilestones
-              onNavigate={(page) => setActivePage(page)}
-              onOpenAssistant={handleOpenAssistant}
-              onRunPipeline={handleRunPipeline}
-              documentationOutput={latestDocumentationOutput}
-            />
-          )}
-
-          {activePage === 'settings' && (
-            <SettingsPage />
           )}
         </main>
       </div>

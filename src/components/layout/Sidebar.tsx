@@ -9,11 +9,9 @@ import {
   Activity,
   Bot,
   FileSpreadsheet,
-  Settings,
   ChevronLeft,
   ChevronRight,
   ShieldCheck,
-  Layers,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -51,13 +49,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
       items: [
         { id: 'assistant', label: 'AI Assistant', icon: Bot },
         { id: 'reports', label: 'Reports & Doc Gen', icon: FileSpreadsheet },
-      ],
-    },
-    {
-      heading: 'SYSTEM & SPEC',
-      items: [
-        { id: 'roadmap', label: 'Architecture & Spec', icon: Layers },
-        { id: 'settings', label: 'Settings', icon: Settings },
       ],
     },
   ];
