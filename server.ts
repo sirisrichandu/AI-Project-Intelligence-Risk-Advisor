@@ -29,7 +29,43 @@ function readChromaStore(): {
   try {
     if (fs.existsSync(CHROMA_JSON)) {
       const raw = fs.readFileSync(CHROMA_JSON, 'utf-8');
-      return JSON.parse(raw);
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === 'object') {
+        const chunks = Array.isArray(parsed.chunks) ? parsed.chunks : [];
+        let documents = Array.isArray(parsed.documents) ? parsed.documents : [];
+
+        // If documents array is missing from ChromaDB payload, synthesize from chunk metadata
+        if (documents.length === 0 && chunks.length > 0) {
+          const docMap = new Map<string, any>();
+          for (const c of chunks) {
+            const docId = c.document_id || c.documentId || 'doc-default';
+            if (!docMap.has(docId)) {
+              docMap.set(docId, {
+                id: docId,
+                name: c.document_name || c.documentName || 'Project_Document.pdf',
+                type: (c.document_name || 'TXT').split('.').pop()?.toUpperCase() || 'TXT',
+                size: `${Math.max(1, Math.round((c.text || '').length / 1024))} KB`,
+                uploadDate: (c.created_at || new Date().toISOString()).slice(0, 10),
+                status: 'COMPLETED',
+                chunkCount: 1,
+                category: c.category || 'general',
+                content: c.text || '',
+              });
+            } else {
+              docMap.get(docId).chunkCount += 1;
+            }
+          }
+          documents = Array.from(docMap.values());
+        }
+
+        return {
+          collection: parsed.collection || 'project_knowledge_base',
+          total_chunks: chunks.length,
+          total_documents: documents.length,
+          documents,
+          chunks,
+        };
+      }
     }
   } catch (err) {
     console.error('Error reading ChromaDB store:', err);

@@ -3,27 +3,50 @@
   "storage_engine": "ChromaDB Persistent Store",
   "persist_directory": "./backend/chroma_db",
   "total_chunks": 2,
-  "last_updated": "2026-10-06T16:07:55.903087Z",
-  "chunks": [
+  "total_documents": 2,
+  "last_updated": "2026-10-07T01:24:06.182Z",
+  "documents": [
     {
-      "id": "doc-1791302817028-tp718-chunk-1",
-      "chunk_index": 1,
-      "document_id": "doc-1791302817028-tp718",
-      "document_name": "Project_SRS_Document.pdf",
-      "category": "requirements",
-      "page": 1,
-      "text": "This is the Project System Requirements Specification (SRS). The primary objective is building an autonomous project risk and scope intelligence advisor that extracts critical blockers, pending action items, and calculates a dimensional health score.",
-      "embedding_dimension": 384,
-      "created_at": "2026-10-06T16:06:57.029Z"
+      "id": "doc-1791336246182-0",
+      "name": "HealthPulse_Architecture_Spec.docx",
+      "type": "DOCX",
+      "size": "1 KB",
+      "uploadDate": "2026-10-07",
+      "status": "COMPLETED",
+      "chunkCount": 1,
+      "category": "architecture",
+      "content": "HealthPulse Architecture Specification. Microservices cluster on Kubernetes with PostgreSQL and ChromaDB vector store. Lead Architect: Sarah Jenkins."
     },
     {
-      "id": "doc-srs-001_chunk_0",
-      "document_id": "doc-srs-001",
-      "document_name": "Project_SRS_Document.pdf",
-      "category": "requirements",
+      "id": "doc-1791336246182-1",
+      "name": "Sprint_05_Retro_Notes.txt",
+      "type": "TXT",
+      "size": "1 KB",
+      "uploadDate": "2026-10-07",
+      "status": "COMPLETED",
+      "chunkCount": 1,
+      "category": "notes",
+      "content": "Sprint 5 Retrospective: Payment gateway sandbox delayed. Critical blocker BLK-02 created. Mitigation assigned to DevOps."
+    }
+  ],
+  "chunks": [
+    {
+      "id": "doc-1791336246182-0_chunk_1",
+      "document_id": "doc-1791336246182-0",
+      "document_name": "HealthPulse_Architecture_Spec.docx",
+      "category": "architecture",
       "page": 1,
-      "text": "System requirements specification for the intelligent project advisor with ChromaDB persistent vector database.",
-      "created_at": "2026-10-06T16:07:55.901664Z"
+      "text": "HealthPulse Architecture Specification. Microservices cluster on Kubernetes with PostgreSQL and ChromaDB vector store. Lead Architect: Sarah Jenkins.",
+      "created_at": "2026-10-07T01:24:06.182Z"
+    },
+    {
+      "id": "doc-1791336246182-1_chunk_1",
+      "document_id": "doc-1791336246182-1",
+      "document_name": "Sprint_05_Retro_Notes.txt",
+      "category": "notes",
+      "page": 1,
+      "text": "Sprint 5 Retrospective: Payment gateway sandbox delayed. Critical blocker BLK-02 created. Mitigation assigned to DevOps.",
+      "created_at": "2026-10-07T01:24:06.182Z"
     }
   ]
 }

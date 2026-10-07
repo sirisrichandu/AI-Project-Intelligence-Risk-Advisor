@@ -97,12 +97,34 @@ class ChromaService:
 
     def _write_json_store(self, chunks: List[Dict[str, Any]]):
         try:
+            seen_docs = {}
+            for c in chunks:
+                doc_id = c.get("document_id")
+                if doc_id and doc_id not in seen_docs:
+                    doc_name = c.get("document_name", "Document")
+                    ext = doc_name.split(".")[-1].upper() if "." in doc_name else "TXT"
+                    seen_docs[doc_id] = {
+                        "id": doc_id,
+                        "name": doc_name,
+                        "type": ext,
+                        "size": f"{max(1, round(len(c.get('text', '')) / 1024))} KB",
+                        "category": c.get("category", "general"),
+                        "chunkCount": 1,
+                        "uploadDate": c.get("created_at", datetime.utcnow().isoformat())[:10],
+                        "status": "COMPLETED",
+                    }
+                elif doc_id in seen_docs:
+                    seen_docs[doc_id]["chunkCount"] += 1
+
+            doc_list = list(seen_docs.values())
             store_data = {
                 "collection": "project_knowledge_base",
                 "storage_engine": "ChromaDB Persistent Store",
                 "persist_directory": self.persist_dir,
                 "total_chunks": len(chunks),
+                "total_documents": len(doc_list),
                 "last_updated": datetime.utcnow().isoformat() + "Z",
+                "documents": doc_list,
                 "chunks": chunks,
             }
             with open(self.json_path, "w", encoding="utf-8") as f:
