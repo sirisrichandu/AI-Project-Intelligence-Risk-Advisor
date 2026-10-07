@@ -416,9 +416,4 @@ The project has progressed from a basic RAG knowledge-base prototype to an AI-po
 
 ---
 
-## 👤 Author
 
-**Sirisrichandu**
-
-B.Tech – Information Technology  
-SRKR Engineering College
