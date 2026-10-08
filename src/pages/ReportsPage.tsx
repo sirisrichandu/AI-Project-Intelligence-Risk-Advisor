@@ -86,18 +86,42 @@ export const ReportsPage: React.FC<ReportsPageProps> = ({
     }
   };
 
-  const handleDownload = () => {
-    if (!activeOutput || !hasDocuments) return;
-    downloadSinglePDF('Project_Documentation_Report', activeOutput);
+  const handleDownload = async () => {
+    if (!hasDocuments) return;
+    let contentToDownload = activeOutput;
+    if (!contentToDownload || contentToDownload.trim().length === 0) {
+      try {
+        const latestDoc = await api.getLatestDocumentation();
+        if (latestDoc?.documentationOutput) {
+          contentToDownload = latestDoc.documentationOutput;
+          setActiveOutput(contentToDownload);
+        }
+      } catch (err) {
+        console.warn('Fallback report generation error:', err);
+      }
+    }
+    downloadSinglePDF('Helmet_Detection_Project_Documentation_Report', contentToDownload);
   };
 
-  const handleDownloadTxt = () => {
-    if (!activeOutput || !hasDocuments) return;
-    const blob = new Blob([activeOutput], { type: 'text/plain;charset=utf-8' });
+  const handleDownloadTxt = async () => {
+    if (!hasDocuments) return;
+    let contentToDownload = activeOutput;
+    if (!contentToDownload || contentToDownload.trim().length === 0) {
+      try {
+        const latestDoc = await api.getLatestDocumentation();
+        if (latestDoc?.documentationOutput) {
+          contentToDownload = latestDoc.documentationOutput;
+          setActiveOutput(contentToDownload);
+        }
+      } catch (err) {
+        console.warn('Fallback report generation error:', err);
+      }
+    }
+    const blob = new Blob([contentToDownload || 'Project Documentation'], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = 'Project_Documentation_UserStories_RiskRegister.txt';
+    link.download = 'Helmet_Detection_UserStories_RiskRegister.txt';
     link.click();
     URL.revokeObjectURL(url);
   };
@@ -121,9 +145,9 @@ export const ReportsPage: React.FC<ReportsPageProps> = ({
         {/* SINGLE PDF DOWNLOAD BUTTON */}
         <button
           onClick={handleDownload}
-          disabled={!hasDocuments || !activeOutput}
-          className="px-5 py-2.5 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-xs transition-all flex items-center gap-2 shadow-lg shadow-teal-500/25 shrink-0 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-teal-500"
-          title={!hasDocuments ? 'Upload documents to generate PDF' : 'Download PDF Document'}
+          disabled={!hasDocuments}
+          className="px-5 py-2.5 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-xs transition-all flex items-center gap-2 shadow-lg shadow-teal-500/25 shrink-0 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-teal-500 cursor-pointer"
+          title={!hasDocuments ? 'Upload documents to generate PDF' : 'Download Master PDF Document'}
         >
           <Download className="w-4 h-4" />
           <span>Download PDF Document</span>
@@ -180,16 +204,14 @@ export const ReportsPage: React.FC<ReportsPageProps> = ({
               <div className="flex flex-col sm:flex-row items-stretch gap-2">
                 <button
                   onClick={handleDownload}
-                  disabled={!activeOutput}
-                  className="px-5 py-3 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-xs transition-all flex items-center justify-center gap-2 shadow-lg shadow-teal-500/30 disabled:opacity-50"
+                  className="px-5 py-3 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-xs transition-all flex items-center justify-center gap-2 shadow-lg shadow-teal-500/30"
                 >
                   <Download className="w-4 h-4" />
                   <span>Download PDF Documentation</span>
                 </button>
                 <button
                   onClick={handleDownloadTxt}
-                  disabled={!activeOutput}
-                  className="px-4 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs transition-colors flex items-center justify-center gap-2 border border-slate-700 disabled:opacity-50"
+                  className="px-4 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs transition-colors flex items-center justify-center gap-2 border border-slate-700"
                   title="Download tab-delimited text for spreadsheets"
                 >
                   <FileText className="w-4 h-4 text-teal-400" />
@@ -220,11 +242,11 @@ export const ReportsPage: React.FC<ReportsPageProps> = ({
               <FileText className="w-4 h-4 text-teal-400" />
               <h3 className="text-sm font-bold text-white">Documentation Generation Output Preview</h3>
               <span className={`text-[10px] font-mono uppercase px-2 py-0.5 rounded border ${
-                hasDocuments && activeOutput
+                hasDocuments
                   ? 'bg-teal-500/10 text-teal-300 border-teal-500/30'
                   : 'bg-slate-800 text-slate-400 border-slate-700'
               }`}>
-                {hasDocuments && activeOutput ? 'SYNTHESIZED OUTPUT' : 'NO DOCUMENTS'}
+                {hasDocuments ? 'SYNTHESIZED DOSSIER' : 'NO DOCUMENTS'}
               </span>
             </div>
 
@@ -245,7 +267,7 @@ export const ReportsPage: React.FC<ReportsPageProps> = ({
 
               <button
                 onClick={handleDownload}
-                disabled={!hasDocuments || !activeOutput}
+                disabled={!hasDocuments}
                 className="px-4 py-1.5 rounded-lg bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-xs transition-colors flex items-center gap-1.5 shadow-sm shadow-teal-500/20 disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 <Download className="w-3.5 h-3.5" />

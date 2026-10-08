@@ -24,6 +24,7 @@ import {
 } from './types';
 import { downloadSinglePDF } from './utils/pdfDownloader';
 import { DocGenModal } from './components/shared/DocGenModal';
+import { ErrorBoundary } from './components/shared/ErrorBoundary';
 import { Loader2, Download, X, FileText, CheckCircle2 } from 'lucide-react';
 
 export default function App() {
@@ -190,70 +191,72 @@ export default function App() {
 
         {/* Main Viewport Container */}
         <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-[1600px] w-full mx-auto">
-          {activePage === 'dashboard' && (
-            <Dashboard
-              summary={summary}
-              health={health}
-              risks={risks}
-              tasksAtRisk={tasksAtRisk}
-              conflicts={conflicts}
-              isRunningPipeline={isRunningPipeline}
-              pipelineStep={pipelineStep}
-              onRunPipeline={handleRunPipeline}
-              onOpenAssistant={handleOpenAssistant}
-              onNavigate={(page) => setActivePage(page)}
-            />
-          )}
+          <ErrorBoundary>
+            {activePage === 'dashboard' && (
+              <Dashboard
+                summary={summary}
+                health={health}
+                risks={risks}
+                tasksAtRisk={tasksAtRisk}
+                conflicts={conflicts}
+                isRunningPipeline={isRunningPipeline}
+                pipelineStep={pipelineStep}
+                onRunPipeline={handleRunPipeline}
+                onOpenAssistant={handleOpenAssistant}
+                onNavigate={(page) => setActivePage(page)}
+              />
+            )}
 
-          {activePage === 'documents' && (
-            <Documents
-              documents={documents}
-              totalChunks={totalChunks}
-              onRefresh={loadAllData}
-              onRunPipeline={handleRunPipeline}
-            />
-          )}
+            {activePage === 'documents' && (
+              <Documents
+                documents={documents}
+                totalChunks={totalChunks}
+                onRefresh={loadAllData}
+                onRunPipeline={handleRunPipeline}
+              />
+            )}
 
-          {activePage === 'intelligence' && scope && (
-            <ProjectIntelligence scope={scope} />
-          )}
+            {activePage === 'intelligence' && scope && (
+              <ProjectIntelligence scope={scope} />
+            )}
 
-          {activePage === 'risks' && (
-            <RisksPage
-              risks={risks}
-              onOpenAssistant={handleOpenAssistant}
-              onRefresh={loadAllData}
-            />
-          )}
+            {activePage === 'risks' && (
+              <RisksPage
+                risks={risks}
+                onOpenAssistant={handleOpenAssistant}
+                onRefresh={loadAllData}
+              />
+            )}
 
-          {(activePage === 'blockers' || activePage === 'actions' || activePage === 'blockers-actions') && (
-            <BlockersPage
-              blockers={blockers}
-              actions={actions}
-              tasksAtRisk={tasksAtRisk}
-              initialTab={activePage === 'actions' ? 'actions' : activePage === 'blockers' ? 'blockers' : 'all'}
-              onOpenAssistant={handleOpenAssistant}
-            />
-          )}
+            {(activePage === 'blockers' || activePage === 'actions' || activePage === 'blockers-actions') && (
+              <BlockersPage
+                blockers={blockers || []}
+                actions={actions || []}
+                tasksAtRisk={tasksAtRisk || []}
+                initialTab={activePage === 'actions' ? 'actions' : activePage === 'blockers' ? 'blockers' : 'all'}
+                onOpenAssistant={handleOpenAssistant}
+              />
+            )}
 
-          {activePage === 'health' && health && (
-            <HealthScorePage
-              health={health}
-              onOpenAssistant={handleOpenAssistant}
-            />
-          )}
+            {activePage === 'health' && health && (
+              <HealthScorePage
+                health={health}
+                onOpenAssistant={handleOpenAssistant}
+              />
+            )}
 
-          {activePage === 'assistant' && (
-            <AssistantPage />
-          )}
+            {activePage === 'assistant' && (
+              <AssistantPage />
+            )}
 
-          {activePage === 'reports' && (
-            <ReportsPage
-              documentationOutput={latestDocumentationOutput}
-              hasDocuments={documents.length > 0}
-              onNavigate={(page) => setActivePage(page)}
-            />
-          )}
+            {activePage === 'reports' && (
+              <ReportsPage
+                documentationOutput={latestDocumentationOutput}
+                hasDocuments={documents.length > 0}
+                onNavigate={(page) => setActivePage(page)}
+              />
+            )}
+          </ErrorBoundary>
         </main>
       </div>
 

@@ -76,7 +76,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
               <span aria-hidden="true">·</span>
               <span>{summary?.totalDocuments ? `${summary.totalDocuments} Ingested Docs` : '0 Documents'}</span>
             </div>
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white text-left not-italic">
               Project Intelligence & Risk Command Center
             </h1>
             <p className="text-xs text-slate-400 mt-1 max-w-2xl leading-relaxed">

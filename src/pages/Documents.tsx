@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ProjectDocument } from '../types';
 import { api } from '../services/api';
+import { DocumentViewerModal } from '../components/documents/DocumentViewerModal';
+import { downloadSinglePDF } from '../utils/pdfDownloader';
 import {
   UploadCloud,
   FileText,
@@ -18,6 +20,8 @@ import {
   AlertTriangle,
   PlayCircle,
   FilePlus,
+  Eye,
+  FileCheck,
 } from 'lucide-react';
 
 interface DocumentsProps {
@@ -46,6 +50,7 @@ export const Documents: React.FC<DocumentsProps> = ({
     type: 'success' | 'error' | 'info';
     message: string;
   } | null>(null);
+  const [selectedDocForView, setSelectedDocForView] = useState<ProjectDocument | null>(null);
   const [isInjectingSample, setIsInjectingSample] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -62,7 +67,9 @@ export const Documents: React.FC<DocumentsProps> = ({
     try {
       const url = api.downloadDocumentUrl(id);
       const response = await fetch(url);
-      if (!response.ok) throw new Error('Download failed');
+      if (!response.ok) {
+        throw new Error(`Server returned ${response.status}: ${response.statusText}`);
+      }
       const blob = await response.blob();
       const blobUrl = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -72,8 +79,16 @@ export const Documents: React.FC<DocumentsProps> = ({
       a.click();
       document.body.removeChild(a);
       setTimeout(() => window.URL.revokeObjectURL(blobUrl), 4000);
-    } catch (err) {
-      window.location.href = api.downloadDocumentUrl(id);
+      setActionNotification({
+        type: 'success',
+        message: `Successfully downloaded "${name}".`,
+      });
+    } catch (err: any) {
+      console.error('Download error:', err);
+      setActionNotification({
+        type: 'error',
+        message: `Download failed for "${name}": ${err.message || 'File not available on server'}`,
+      });
     }
   };
 
@@ -476,6 +491,24 @@ export const Documents: React.FC<DocumentsProps> = ({
             </button>
             {localDocs.length > 0 && (
               <button
+                onClick={async () => {
+                  try {
+                    const docData = await api.getLatestDocumentation();
+                    const content = docData?.documentationOutput || '';
+                    downloadSinglePDF('Project_KnowledgeBase_Master_Specification', content);
+                  } catch (e) {
+                    downloadSinglePDF('Project_KnowledgeBase_Master_Specification');
+                  }
+                }}
+                className="px-3 py-1.5 rounded-lg bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-xs flex items-center gap-1.5 transition-colors shadow-sm shadow-teal-500/20"
+                title="Export complete dossier containing User Stories, Risk Register, and Action Items"
+              >
+                <FileCheck className="w-3.5 h-3.5" />
+                <span>Export Master PDF</span>
+              </button>
+            )}
+            {localDocs.length > 0 && (
+              <button
                 onClick={handleClearAll}
                 disabled={isClearingAll}
                 className="px-3 py-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 text-xs font-medium flex items-center gap-1.5 transition-colors disabled:opacity-50"
@@ -551,9 +584,13 @@ export const Documents: React.FC<DocumentsProps> = ({
                   <tr key={doc.id} className="hover:bg-slate-900/50 transition-colors">
                     <td className="py-3 font-medium text-slate-100 flex items-center gap-2.5">
                       {getFileIcon(doc.type)}
-                      <span className="truncate max-w-[240px]" title={doc.name}>
+                      <button
+                        onClick={() => setSelectedDocForView(doc)}
+                        className="truncate max-w-[240px] text-left hover:text-teal-300 hover:underline transition-colors font-medium cursor-pointer"
+                        title={`Click to view content of ${doc.name}`}
+                      >
                         {doc.name}
-                      </span>
+                      </button>
                     </td>
                     <td className="py-3">
                       <span className="font-mono text-[10px] uppercase px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
@@ -574,9 +611,28 @@ export const Documents: React.FC<DocumentsProps> = ({
                     <td className="py-3 text-right">
                       <div className="flex items-center justify-end gap-1">
                         <button
+                          onClick={() => {
+                            downloadSinglePDF(
+                              `${doc.name.replace(/\.[^/.]+$/, '')}_Specification_Report`,
+                              doc.content
+                            );
+                          }}
+                          title={`Export formatted PDF (User Stories, Risks & Actions) for ${doc.name}`}
+                          className="p-1.5 rounded text-teal-400 hover:text-white hover:bg-teal-500/20 transition-colors inline-flex items-center cursor-pointer"
+                        >
+                          <FileCheck className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => setSelectedDocForView(doc)}
+                          title={`View extracted text & chunks for ${doc.name}`}
+                          className="p-1.5 rounded text-slate-400 hover:text-teal-300 hover:bg-slate-800 transition-colors inline-flex items-center cursor-pointer"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+                        <button
                           onClick={() => handleDownloadDoc(doc.id, doc.name)}
                           title={`Download ${doc.name}`}
-                          className="p-1.5 rounded text-slate-400 hover:text-teal-300 hover:bg-slate-800 transition-colors inline-flex items-center"
+                          className="p-1.5 rounded text-slate-400 hover:text-teal-300 hover:bg-slate-800 transition-colors inline-flex items-center cursor-pointer"
                         >
                           <Download className="w-4 h-4" />
                         </button>
@@ -584,7 +640,7 @@ export const Documents: React.FC<DocumentsProps> = ({
                           onClick={() => handleDelete(doc.id, doc.name)}
                           disabled={deletingId === doc.id}
                           title={`Delete ${doc.name}`}
-                          className="p-1.5 rounded text-rose-400 hover:text-rose-200 hover:bg-rose-500/20 transition-colors inline-flex items-center disabled:opacity-50"
+                          className="p-1.5 rounded text-rose-400 hover:text-rose-200 hover:bg-rose-500/20 transition-colors inline-flex items-center disabled:opacity-50 cursor-pointer"
                         >
                           {deletingId === doc.id ? (
                             <RefreshCw className="w-4 h-4 animate-spin text-rose-400" />
@@ -624,6 +680,13 @@ export const Documents: React.FC<DocumentsProps> = ({
           </button>
         </div>
       )}
+      {/* Document Content & Vector Chunks Preview Modal */}
+      <DocumentViewerModal
+        document={selectedDocForView}
+        isOpen={!!selectedDocForView}
+        onClose={() => setSelectedDocForView(null)}
+        onDownload={handleDownloadDoc}
+      />
     </div>
   );
 };

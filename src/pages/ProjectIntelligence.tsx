@@ -27,7 +27,7 @@ export const ProjectIntelligence: React.FC<ProjectIntelligenceProps> = ({ scope 
               SCOPE EXTRACTION AGENT
             </span>
           </div>
-          <h2 className="text-lg font-bold text-white tracking-tight">Project Intelligence & Scope Architecture</h2>
+          <h2 className="text-lg font-bold text-white tracking-tight">Scope and Milestones</h2>
           <p className="text-xs text-slate-400">
             Synthesized objectives, deliverables, milestones, requirements, and constraints from uploaded project artifacts.
           </p>

@@ -2,51 +2,394 @@
   "collection": "project_knowledge_base",
   "storage_engine": "ChromaDB Persistent Store",
   "persist_directory": "./backend/chroma_db",
-  "total_chunks": 2,
-  "total_documents": 2,
-  "last_updated": "2026-10-07T01:24:06.182Z",
+  "total_chunks": 34,
+  "total_documents": 7,
+  "last_updated": "2026-10-07T03:08:52.623Z",
   "documents": [
     {
-      "id": "doc-1791336246182-0",
-      "name": "HealthPulse_Architecture_Spec.docx",
+      "id": "doc-1791342532624-0",
+      "name": "Helmet_Detection_Industry_Issue_Action_Tracker.csv",
+      "type": "CSV",
+      "size": "5 KB",
+      "uploadDate": "2026-10-07",
+      "status": "COMPLETED",
+      "chunkCount": 11,
+      "category": "trackers",
+      "content": "Issue_ID,Type,Title,Description,Priority,Severity,Status,Owner,Due_Date,Dependency,Impact,Action,Acceptance_Criteria,Evidence_Required\nISS-001,Blocker,Insufficient night-time helmet dataset coverage,\"Current validation set contains limited low-light, rain, glare, and motion-blur samples, reducing confidence in production performance.\",Critical,High,Open,ML Lead,2026-10-12,Representative traffic dataset,Model may miss helmet violations in adverse conditions.,\"Add low-light, rain, glare, occlusion, and motion-blur samples and rerun validation.\",Validation set covers all agreed adverse scenarios and performance is reported per scenario.,Updated dataset manifest and evaluation report\nISS-002,Blocker,OCR accuracy below acceptance threshold,\"Number-plate OCR produces inconsistent text under blur, skew, small plate size, and poor illumination.\",Critical,High,Open,OCR Engineer,2026-10-15,Plate image quality,Incorrect plate text can cause unreliable evidence records.,\"Tune preprocessing, confidence thresholds, plate cropping, and OCR fallback handling.\",OCR meets the approved accuracy threshold on the held-out validation set.,OCR benchmark with confidence distribution and error samples\nISS-003,Blocker,Backend inference API contract not finalized,\"Frontend and backend teams have not finalized request/response fields for image inference, confidence values, and evidence identifiers.\",High,High,Open,Backend Lead,2026-10-10,Frontend integration,Integration testing and UI binding are blocked.,Publish versioned API schema and example payloads; obtain frontend sign-off.,\"API contract is documented, versioned, tested, and approved by frontend and backend leads.\",API specification and integration test results\nISS-004,Action,Define helmet/person/vehicle association rules,The system needs deterministic rules for associating a detected person with a helmet and vehicle before creating a violation record.,High,Medium,In Progress,ML Lead,2026-10-11,Detection outputs,Incorrect association can create false violations.,\"Document spatial, temporal, confidence, and tracking rules and validate against representative scenes.\",Rules are documented and verified against at least 20 representative scenarios.,Association-rule specification and test cases\nISS-005,Action,Evidence retention policy pending approval,\"Retention duration and access rules for original images, cropped plates, OCR text, and derived violation records are not yet approved.\",High,High,Pending Approval,Product Owner + Security,2026-10-18,Privacy/security review,Production deployment cannot pass governance review.,\"Finalize retention, deletion, access-control, and audit requirements.\",Security and product owners approve the evidence retention policy.,Approved data-retention and access-control policy\nISS-006,Action,Duplicate evidence records generated on retry,Repeated API requests can create duplicate violation records when the client retries after a timeout.,High,Medium,Open,Backend Engineer,2026-10-14,Evidence persistence,Duplicate records reduce data integrity and may inflate violation counts.,Implement idempotency keys and database uniqueness constraints.,Repeated requests with the same idempotency key create only one evidence record.,Automated retry/idempotency test results\nISS-007,Task,Create end-to-end representative test pack,\"Prepare a controlled test pack covering compliant riders, non-compliant riders, multiple riders, partial occlusion, night scenes, and unreadable plates.\",Medium,Medium,In Progress,QA Lead,2026-10-20,Approved test data,Release confidence cannot be established without repeatable end-to-end tests.,Create labeled test scenarios and expected outcomes.,All critical scenarios have expected outcomes and traceable test IDs.,E2E test matrix and execution report\nISS-008,Risk,Inference latency may exceed operational target,YOLO detection plus OCR and evidence persistence may exceed the target processing time on constrained hardware.,Medium,Medium,Monitoring,ML Lead + DevOps,2026-10-22,Target deployment hardware,Slow processing may reduce throughput for traffic-camera workloads.,\"Benchmark model variants, image resolution, batching, and OCR execution strategy.\",Measured p50/p95 latency is within the approved operational target.,Performance benchmark report\nISS-009,Action,Add negative and security tests for uploads,\"Upload handling must reject unsupported files, malformed content, oversized files, and potentially unsafe inputs.\",High,High,Open,QA + Security,2026-10-25,Upload API,Unvalidated inputs may create availability or security issues.,\"Add negative, boundary, authorization, and malformed-file tests.\",All defined upload abuse cases are rejected safely and logged.,Security test report\nISS-010,Decision,Human review required for uncertain violations,Low-confidence helmet status or OCR results must be routed for manual review instead of being treated as confirmed violations.,High,High,Agreed,Product Owner,2026-10-09,Confidence thresholds,Reduces risk of automated false-positive enforcement decisions.,Define review thresholds and UI states for uncertain results.,Uncertain results are clearly marked and routed to a review workflow.,Approved decision policy and UI test evidence\n"
+    },
+    {
+      "id": "doc-1791342532624-1",
+      "name": "Helmet_Detection_Industry_Sprint_Standup_Blockers_Actions.txt",
+      "type": "TXT",
+      "size": "4 KB",
+      "uploadDate": "2026-10-07",
+      "status": "COMPLETED",
+      "chunkCount": 9,
+      "category": "notes",
+      "content": "HELMET DETECTION & NUMBER PLATE STORAGE SYSTEM\nINDUSTRY-LEVEL SPRINT 04 STAND-UP / DELIVERY NOTES\nDocument Type: Project Execution Notes for AI Project Intelligence & Risk Advisor Testing\nDate: 15 October 2026\nProject Phase: Model Validation, OCR Integration, API Integration & Release Readiness\n\n1. PROJECT OBJECTIVE\nThe team is developing a computer-vision system that detects helmet compliance from traffic\nimagery/video and, where applicable, detects vehicle/number-plate information using OCR.\nThe system must preserve traceable evidence and clearly separate confirmed results from\nlow-confidence results requiring human review.\n\n2. CURRENT DELIVERY STATUS\nOverall status: AMBER\nCurrent focus:\n- Improve robustness of helmet detection in difficult environmental conditions.\n- Improve number-plate OCR accuracy.\n- Finalize frontend/backend inference API contract.\n- Validate evidence persistence and duplicate-prevention behavior.\n- Prepare end-to-end release-readiness testing.\n\n3. BLOCKERS\nBLOCKER B-01 — ADVERSE-CONDITION DATASET COVERAGE\nOwner: ML Lead\nStatus: OPEN\nThe current validation dataset has insufficient coverage of night scenes, rain, glare,\nmotion blur, and partial occlusion. The team cannot make a reliable release decision\nuntil representative samples are added and evaluated.\nImpact: High\nRequired resolution: Expand the validation dataset and publish scenario-level metrics.\nTarget date: 12 October 2026.\n\nBLOCKER B-02 — OCR ACCURACY BELOW ACCEPTANCE THRESHOLD\nOwner: OCR Engineer\nStatus: OPEN\nNumber-plate OCR is inconsistent for blurred, skewed, small, and poorly illuminated plates.\nThis blocks final evidence-quality approval.\nImpact: High\nRequired resolution: Improve preprocessing, plate cropping, confidence thresholds, and\nfallback/manual-review behavior.\nTarget date: 15 October 2026.\n\nBLOCKER B-03 — INFERENCE API CONTRACT NOT FINALIZED\nOwner: Backend Lead\nStatus: OPEN\nThe frontend and backend teams have not finalized the versioned request/response contract.\nIntegration testing is therefore blocked because field names, confidence values, evidence IDs,\nand error responses are still subject to change.\nImpact: High\nRequired resolution: Publish the API schema, sample payloads, error model, and obtain\nfrontend/backend sign-off.\nTarget date: 10 October 2026.\n\n4. ACTION ITEMS\nA-01: Add adverse-condition samples to validation dataset.\nOwner: ML Lead\nDue: 12 October 2026\nStatus: In Progress\n\nA-02: Benchmark OCR on blur, skew, low-light, and small-plate scenarios.\nOwner: OCR Engineer\nDue: 15 October 2026\nStatus: Open\n\nA-03: Publish versioned inference API contract.\nOwner: Backend Lead\nDue: 10 October 2026\nStatus: Open\n\nA-04: Document person/helmet/vehicle association rules.\nOwner: ML Lead\nDue: 11 October 2026\nStatus: In Progress\n\nA-05: Approve evidence retention and access-control policy.\nOwner: Product Owner + Security\nDue: 18 October 2026\nStatus: Pending Approval\n\nA-06: Implement idempotency for repeated inference requests.\nOwner: Backend Engineer\nDue: 14 October 2026\nStatus: Open\n\nA-07: Prepare end-to-end test pack covering normal and adverse scenarios.\nOwner: QA Lead\nDue: 20 October 2026\nStatus: In Progress\n\nA-08: Add upload validation, negative testing, and security tests.\nOwner: QA + Security\nDue: 25 October 2026\nStatus: Open\n\n5. DECISIONS MADE\nD-01: YOLOv8 will be used as the baseline object-detection approach.\nD-02: Model acceptance will be based on validation performance, not model size alone.\nD-03: Precision, recall, mAP, scenario-level errors, and false-positive/false-negative analysis\n      must be reported before release approval.\nD-04: Helmet status and OCR results with insufficient confidence must be routed to human review.\nD-05: Evidence records must have traceable identifiers and timestamps.\nD-06: Repeated client requests must not create duplicate evidence records.\nD-07: Production deployment requires security, privacy, and evidence-retention approval.\n\n6. RELEASE GATES\nGate 1: Dataset coverage approved.\nGate 2: Helmet detection metrics meet approved thresholds.\nGate 3: OCR benchmark meets approved threshold.\nGate 4: API contract frozen and integration tests pass.\nGate 5: Evidence persistence and idempotency tests pass.\nGate 6: Security and privacy checks pass.\nGate 7: End-to-end test pack passes.\nGate 8: Product Owner signs off release readiness.\n"
+    },
+    {
+      "id": "doc-1791342532624-2",
+      "name": "Helmet_Detection_Industry_Level_SRS.pdf",
+      "type": "PDF",
+      "size": "2 KB",
+      "uploadDate": "2026-10-07",
+      "status": "COMPLETED",
+      "chunkCount": 4,
+      "category": "specifications",
+      "content": "SYSTEM REQUIREMENTS SPECIFICATION (SRS)\nPROJECT: Computer Vision Helmet Detection & Number Plate Recognition System\nVERSION: 2.1 | DATE: 12 October 2026 | AUTHOR: System Architecture Team\n\n1. PURPOSE & VISION\nThe Helmet Detection System provides automated traffic camera frame processing, identifying riders operating two-wheeled vehicles without safety helmets. In cases of confirmed non-compliance, vehicle license plates are localized, cropped, and digitized via OCR to construct tamper-evident violation evidence dossiers.\n\n2. SYSTEM SCOPE & FUNCTIONAL MODULES\n2.1 Frame Ingestion: Accepts RTSP/HLS camera streams and batch static image uploads (.jpg, .png, .mp4).\n2.2 Rider & Helmet Detection: Runs YOLOv8 multi-class object detection (classes: rider, helmet, bare-head, motorcycle).\n2.3 Association Heuristics: Implements spatial Intersection-over-Union (IoU) and centroid proximity to associate bare-head bounding boxes with riders and motorcycles.\n2.4 License Plate Localization & OCR: Crops localized number plates, applies adaptive thresholding, de-skewing, and runs OCR character extraction with confidence scoring.\n2.5 Evidence Vault: Stores original source frames, plate crops, OCR text, detection bounding boxes, and metadata into immutable records.\n2.6 Human Review Dispatcher: Dispatches detections with confidence scores below 0.85 to the operator review queue.\n\n3. NON-FUNCTIONAL REQUIREMENTS\n- Performance: Maximum p95 latency under 250ms per frame on edge accelerator.\n- Accuracy: Target helmet detection precision >= 94%, OCR character accuracy >= 90%.\n- Idempotency: Duplicate API calls with matching trace keys must result in zero duplicate records.\n- Governance: 90-day evidence retention lifecycle with role-based cryptographic access control.\n"
+    },
+    {
+      "id": "doc-1791342532624-3",
+      "name": "Helmet_Detection_Industry_Level_Project_Status_Report.pdf",
+      "type": "PDF",
+      "size": "1 KB",
+      "uploadDate": "2026-10-07",
+      "status": "COMPLETED",
+      "chunkCount": 3,
+      "category": "reports",
+      "content": "PROJECT STATUS REPORT — SPRINT 04\nPROJECT: Helmet Detection & OCR Enforcement System\nREPORTING PERIOD: 01 October 2026 - 15 October 2026\nOVERALL HEALTH STATUS: AMBER (At Risk)\n\n1. EXECUTIVE SUMMARY\nSprint 04 delivery velocity has slowed due to three active impediments requiring cross-functional mitigation. Model evaluation under adverse lighting conditions is constrained by limited night-scene validation data (Blocker B-01). Plate OCR accuracy under motion skew currently benchmarks below deployment gate thresholds (Blocker B-02). Backend API contract freezing is pending frontend signoff (Blocker B-03).\n\n2. MILESTONE PROGRESS\n- Ingestion Pipeline: 100% Completed\n- YOLOv8 Base Model Architecture: 90% Completed\n- Adverse Weather Augmented Training: 45% (Blocked by dataset coverage)\n- OCR Character Recognition Engine: 60% (Under tuning)\n- REST API Contract & Idempotency: 70% (Under review)\n- Evidence Persistence DB: 85% Completed\n\n3. CRITICAL RISK RADAR\n- Risk RSK-01 (Adverse Weather Accuracy): Critical severity, 75% probability.\n- Risk RSK-02 (Edge Hardware Latency Budget): High severity, 60% probability.\n- Risk RSK-03 (API Schema Freezing): High severity, 50% probability.\n\n4. NEXT STEPS & SPRINT 05 OBJECTIVES\nResolve B-01 by expanding validation frames. Benchmark INT8 quantization for YOLOv8. Freeze versioned REST schema by 10 October 2026.\n"
+    },
+    {
+      "id": "doc-1791342532624-4",
+      "name": "Helmet_Detection_Industry_Level_Risk_Register.xlsx",
+      "type": "XLSX",
+      "size": "1 KB",
+      "uploadDate": "2026-10-07",
+      "status": "COMPLETED",
+      "chunkCount": 2,
+      "category": "risks",
+      "content": "Risk_ID,Category,Risk_Title,Probability,Impact,Severity,Mitigation_Strategy,Owner,Status\nRSK-01,Technical,Adverse Environmental Lighting & Weather Generalization Gap,75%,85%,Critical,\"Add synthetic glare, rain augmentation, and expand night validation dataset.\",ML Lead,Open\nRSK-02,Technical,Inference Latency Exceeding Target on Edge Hardware,60%,75%,High,\"Benchmark TensorRT INT8 quantization and asynchronous frame batching.\",ML Lead + DevOps,Open\nRSK-03,Schedule,Inference API Contract Freezing Delays,50%,70%,High,\"Freeze versioned OpenAPI spec and deploy mock provider for client integration.\",Backend Lead,Open\nRSK-04,Data Integrity,Duplicate Evidence Records Generated on Retries,45%,65%,High,\"Implement idempotency keys and unique compound database constraints.\",Backend Engineer,Open\nRSK-05,Compliance,Evidence Retention Policy Governance Approval Delays,40%,80%,High,\"Engage Data Protection Officer and Product Owner for legal policy signoff.\",Product Owner + Security,Open\n"
+    },
+    {
+      "id": "doc-1791342532625-5",
+      "name": "Helmet_Detection_Industry_Level_Project_Plan_Milestones.xlsx",
+      "type": "XLSX",
+      "size": "1 KB",
+      "uploadDate": "2026-10-07",
+      "status": "COMPLETED",
+      "chunkCount": 2,
+      "category": "plans",
+      "content": "Milestone_ID,Milestone_Name,Target_Date,Status,Owner,Deliverables\nM-01,Adverse-Condition Dataset Coverage Signoff,2026-10-12,In Progress,ML Lead,Synthetic glare and night test manifest\nM-02,OCR Accuracy Benchmark Validation,2026-10-15,In Progress,OCR Engineer,Held-out benchmark accuracy report >= 90%\nM-03,Inference API Contract Freezing,2026-10-10,In Progress,Backend Lead,Versioned OpenAPI 3.0 specification & mocks\nM-04,Evidence Persistence & Idempotency Signoff,2026-10-14,Upcoming,Backend Engineer,Automated retry tests & DB uniqueness constraints\nM-05,End-to-End Representative Test Pack Execution,2026-10-20,Upcoming,QA Lead,Traceable test matrix across 13 core scenarios\nM-06,Production Governance & Security Signoff,2026-10-25,Upcoming,Security Lead,Evidence retention policy and RBAC audit\n"
+    },
+    {
+      "id": "doc-1791342532625-6",
+      "name": "Helmet_Detection_Updated_Meeting_Minutes_with_Blockers.docx",
       "type": "DOCX",
       "size": "1 KB",
       "uploadDate": "2026-10-07",
       "status": "COMPLETED",
-      "chunkCount": 1,
-      "category": "architecture",
-      "content": "HealthPulse Architecture Specification. Microservices cluster on Kubernetes with PostgreSQL and ChromaDB vector store. Lead Architect: Sarah Jenkins."
-    },
-    {
-      "id": "doc-1791336246182-1",
-      "name": "Sprint_05_Retro_Notes.txt",
-      "type": "TXT",
-      "size": "1 KB",
-      "uploadDate": "2026-10-07",
-      "status": "COMPLETED",
-      "chunkCount": 1,
+      "chunkCount": 3,
       "category": "notes",
-      "content": "Sprint 5 Retrospective: Payment gateway sandbox delayed. Critical blocker BLK-02 created. Mitigation assigned to DevOps."
+      "content": "ARCHITECTURE REVIEW BOARD & SPRINT RETROSPECTIVE MINUTES\nPROJECT: Helmet Detection & Number Plate Recognition Platform\nDATE: 14 October 2026 | LOCATION: Virtual Sync Room Alpha\nATTENDEES: ML Lead, OCR Engineer, Backend Lead, QA Lead, DevOps Lead, Product Owner\n\nAGENDA:\n1. Review of Active Delivery Blockers (B-01, B-02, B-03)\n2. Evaluation of YOLOv8 Baseline Metrics vs Operational SLA\n3. Status of OCR Pipeline Tuning for Distant and Skewed Plates\n4. REST API Schema Freezing & Idempotency Strategy\n\nDISCUSSION NOTES:\n- Blocker B-01 (Dataset Coverage): ML Lead confirmed that the current validation set lacks representative rain, glare, and night camera frames. Decision: Allocate 4 engineering days to ingest 2,500 labeled adverse frames before model acceptance signoff.\n- Blocker B-02 (OCR Accuracy): OCR Engineer reported plate text accuracy sits at 82% against target 90%. Resolution: Apply bilateral filtering, plate perspective correction, and route confidence < 0.85 to human review.\n- Blocker B-03 (API Contract): Backend Lead presented OpenAPI v2 schema. Frontend lead requested standardized evidence trace identifiers. Target signoff date: 10 October 2026.\n\nAGREED ACTION ITEMS:\n- A-01: ML Lead to deliver expanded dataset manifest by 12 October 2026.\n- A-02: OCR Engineer to benchmark perspective transformation by 15 October 2026.\n- A-03: Backend Lead to freeze API schema by 10 October 2026.\n- A-04: Security Lead to sign off 90-day evidence retention policy by 18 October 2026.\n"
     }
   ],
   "chunks": [
     {
-      "id": "doc-1791336246182-0_chunk_1",
-      "document_id": "doc-1791336246182-0",
-      "document_name": "HealthPulse_Architecture_Spec.docx",
-      "category": "architecture",
+      "id": "doc-1791342532624-0_chunk_1",
+      "document_id": "doc-1791342532624-0",
+      "document_name": "Helmet_Detection_Industry_Issue_Action_Tracker.csv",
+      "category": "trackers",
       "page": 1,
-      "text": "HealthPulse Architecture Specification. Microservices cluster on Kubernetes with PostgreSQL and ChromaDB vector store. Lead Architect: Sarah Jenkins.",
-      "created_at": "2026-10-07T01:24:06.182Z"
+      "text": "Issue_ID,Type,Title,Description,Priority,Severity,Status,Owner,Due_Date,Dependency,Impact,Action,Acceptance_Criteria,Evidence_Required\nISS-001,Blocker,Insufficient night-time helmet dataset coverage,\"Current validation set contains limited low-light, rain, glare, and motion-blur samples, reducing confidence in production performance.\",Critical,High,Open,ML Lead,2026-10-12,Representative traffic dataset,Model may miss helmet violations in adverse conditions.,\"Add low-light, rain, glare, occlusion, and motion-blur samples and rerun validation.\",Validation set covers all agreed adverse scenarios",
+      "created_at": "2026-10-07T03:08:52.623Z"
     },
     {
-      "id": "doc-1791336246182-1_chunk_1",
-      "document_id": "doc-1791336246182-1",
-      "document_name": "Sprint_05_Retro_Notes.txt",
+      "id": "doc-1791342532624-0_chunk_2",
+      "document_id": "doc-1791342532624-0",
+      "document_name": "Helmet_Detection_Industry_Issue_Action_Tracker.csv",
+      "category": "trackers",
+      "page": 1,
+      "text": ", and motion-blur samples and rerun validation.\",Validation set covers all agreed adverse scenarios and performance is reported per scenario.,Updated dataset manifest and evaluation report\nISS-002,Blocker,OCR accuracy below acceptance threshold,\"Number-plate OCR produces inconsistent text under blur, skew, small plate size, and poor illumination.\",Critical,High,Open,OCR Engineer,2026-10-15,Plate image quality,Incorrect plate text can cause unreliable evidence records.,\"Tune preprocessing, confidence thresholds, plate cropping, and OCR fallback handling.\",OCR meets the approved accuracy thresho",
+      "created_at": "2026-10-07T03:08:52.623Z"
+    },
+    {
+      "id": "doc-1791342532624-0_chunk_3",
+      "document_id": "doc-1791342532624-0",
+      "document_name": "Helmet_Detection_Industry_Issue_Action_Tracker.csv",
+      "category": "trackers",
+      "page": 1,
+      "text": "ence thresholds, plate cropping, and OCR fallback handling.\",OCR meets the approved accuracy threshold on the held-out validation set.,OCR benchmark with confidence distribution and error samples\nISS-003,Blocker,Backend inference API contract not finalized,\"Frontend and backend teams have not finalized request/response fields for image inference, confidence values, and evidence identifiers.\",High,High,Open,Backend Lead,2026-10-10,Frontend integration,Integration testing and UI binding are blocked.,Publish versioned API schema and example payloads; obtain frontend sign-off.,\"API contract is doc",
+      "created_at": "2026-10-07T03:08:52.623Z"
+    },
+    {
+      "id": "doc-1791342532624-0_chunk_4",
+      "document_id": "doc-1791342532624-0",
+      "document_name": "Helmet_Detection_Industry_Issue_Action_Tracker.csv",
+      "category": "trackers",
+      "page": 1,
+      "text": "d.,Publish versioned API schema and example payloads; obtain frontend sign-off.,\"API contract is documented, versioned, tested, and approved by frontend and backend leads.\",API specification and integration test results\nISS-004,Action,Define helmet/person/vehicle association rules,The system needs deterministic rules for associating a detected person with a helmet and vehicle before creating a violation record.,High,Medium,In Progress,ML Lead,2026-10-11,Detection outputs,Incorrect association can create false violations.,\"Document spatial, temporal, confidence, and tracking rules and validate",
+      "created_at": "2026-10-07T03:08:52.623Z"
+    },
+    {
+      "id": "doc-1791342532624-0_chunk_5",
+      "document_id": "doc-1791342532624-0",
+      "document_name": "Helmet_Detection_Industry_Issue_Action_Tracker.csv",
+      "category": "trackers",
+      "page": 1,
+      "text": "n create false violations.,\"Document spatial, temporal, confidence, and tracking rules and validate against representative scenes.\",Rules are documented and verified against at least 20 representative scenarios.,Association-rule specification and test cases\nISS-005,Action,Evidence retention policy pending approval,\"Retention duration and access rules for original images, cropped plates, OCR text, and derived violation records are not yet approved.\",High,High,Pending Approval,Product Owner + Security,2026-10-18,Privacy/security review,Production deployment cannot pass governance review.,\"Finali",
+      "created_at": "2026-10-07T03:08:52.623Z"
+    },
+    {
+      "id": "doc-1791342532624-0_chunk_6",
+      "document_id": "doc-1791342532624-0",
+      "document_name": "Helmet_Detection_Industry_Issue_Action_Tracker.csv",
+      "category": "trackers",
+      "page": 1,
+      "text": "rity,2026-10-18,Privacy/security review,Production deployment cannot pass governance review.,\"Finalize retention, deletion, access-control, and audit requirements.\",Security and product owners approve the evidence retention policy.,Approved data-retention and access-control policy\nISS-006,Action,Duplicate evidence records generated on retry,Repeated API requests can create duplicate violation records when the client retries after a timeout.,High,Medium,Open,Backend Engineer,2026-10-14,Evidence persistence,Duplicate records reduce data integrity and may inflate violation counts.,Implement idemp",
+      "created_at": "2026-10-07T03:08:52.623Z"
+    },
+    {
+      "id": "doc-1791342532624-0_chunk_7",
+      "document_id": "doc-1791342532624-0",
+      "document_name": "Helmet_Detection_Industry_Issue_Action_Tracker.csv",
+      "category": "trackers",
+      "page": 2,
+      "text": "ersistence,Duplicate records reduce data integrity and may inflate violation counts.,Implement idempotency keys and database uniqueness constraints.,Repeated requests with the same idempotency key create only one evidence record.,Automated retry/idempotency test results\nISS-007,Task,Create end-to-end representative test pack,\"Prepare a controlled test pack covering compliant riders, non-compliant riders, multiple riders, partial occlusion, night scenes, and unreadable plates.\",Medium,Medium,In Progress,QA Lead,2026-10-20,Approved test data,Release confidence cannot be established without repea",
+      "created_at": "2026-10-07T03:08:52.623Z"
+    },
+    {
+      "id": "doc-1791342532624-0_chunk_8",
+      "document_id": "doc-1791342532624-0",
+      "document_name": "Helmet_Detection_Industry_Issue_Action_Tracker.csv",
+      "category": "trackers",
+      "page": 2,
+      "text": "rogress,QA Lead,2026-10-20,Approved test data,Release confidence cannot be established without repeatable end-to-end tests.,Create labeled test scenarios and expected outcomes.,All critical scenarios have expected outcomes and traceable test IDs.,E2E test matrix and execution report\nISS-008,Risk,Inference latency may exceed operational target,YOLO detection plus OCR and evidence persistence may exceed the target processing time on constrained hardware.,Medium,Medium,Monitoring,ML Lead + DevOps,2026-10-22,Target deployment hardware,Slow processing may reduce throughput for traffic-camera worklo",
+      "created_at": "2026-10-07T03:08:52.623Z"
+    },
+    {
+      "id": "doc-1791342532624-0_chunk_9",
+      "document_id": "doc-1791342532624-0",
+      "document_name": "Helmet_Detection_Industry_Issue_Action_Tracker.csv",
+      "category": "trackers",
+      "page": 2,
+      "text": "026-10-22,Target deployment hardware,Slow processing may reduce throughput for traffic-camera workloads.,\"Benchmark model variants, image resolution, batching, and OCR execution strategy.\",Measured p50/p95 latency is within the approved operational target.,Performance benchmark report\nISS-009,Action,Add negative and security tests for uploads,\"Upload handling must reject unsupported files, malformed content, oversized files, and potentially unsafe inputs.\",High,High,Open,QA + Security,2026-10-25,Upload API,Unvalidated inputs may create availability or security issues.,\"Add negative, boundary,",
+      "created_at": "2026-10-07T03:08:52.623Z"
+    },
+    {
+      "id": "doc-1791342532624-0_chunk_10",
+      "document_id": "doc-1791342532624-0",
+      "document_name": "Helmet_Detection_Industry_Issue_Action_Tracker.csv",
+      "category": "trackers",
+      "page": 3,
+      "text": ",Upload API,Unvalidated inputs may create availability or security issues.,\"Add negative, boundary, authorization, and malformed-file tests.\",All defined upload abuse cases are rejected safely and logged.,Security test report\nISS-010,Decision,Human review required for uncertain violations,Low-confidence helmet status or OCR results must be routed for manual review instead of being treated as confirmed violations.,High,High,Agreed,Product Owner,2026-10-09,Confidence thresholds,Reduces risk of automated false-positive enforcement decisions.,Define review thresholds and UI states for uncertain re",
+      "created_at": "2026-10-07T03:08:52.623Z"
+    },
+    {
+      "id": "doc-1791342532624-0_chunk_11",
+      "document_id": "doc-1791342532624-0",
+      "document_name": "Helmet_Detection_Industry_Issue_Action_Tracker.csv",
+      "category": "trackers",
+      "page": 3,
+      "text": "omated false-positive enforcement decisions.,Define review thresholds and UI states for uncertain results.,Uncertain results are clearly marked and routed to a review workflow.,Approved decision policy and UI test evidence",
+      "created_at": "2026-10-07T03:08:52.623Z"
+    },
+    {
+      "id": "doc-1791342532624-1_chunk_1",
+      "document_id": "doc-1791342532624-1",
+      "document_name": "Helmet_Detection_Industry_Sprint_Standup_Blockers_Actions.txt",
       "category": "notes",
       "page": 1,
-      "text": "Sprint 5 Retrospective: Payment gateway sandbox delayed. Critical blocker BLK-02 created. Mitigation assigned to DevOps.",
-      "created_at": "2026-10-07T01:24:06.182Z"
+      "text": "HELMET DETECTION & NUMBER PLATE STORAGE SYSTEM\nINDUSTRY-LEVEL SPRINT 04 STAND-UP / DELIVERY NOTES\nDocument Type: Project Execution Notes for AI Project Intelligence & Risk Advisor Testing\nDate: 15 October 2026\nProject Phase: Model Validation, OCR Integration, API Integration & Release Readiness\n\n1. PROJECT OBJECTIVE\nThe team is developing a computer-vision system that detects helmet compliance from traffic\nimagery/video and, where applicable, detects vehicle/number-plate information using OCR.\nThe system must preserve traceable evidence and clearly separate confirmed results from\nlow-confidenc",
+      "created_at": "2026-10-07T03:08:52.623Z"
+    },
+    {
+      "id": "doc-1791342532624-1_chunk_2",
+      "document_id": "doc-1791342532624-1",
+      "document_name": "Helmet_Detection_Industry_Sprint_Standup_Blockers_Actions.txt",
+      "category": "notes",
+      "page": 1,
+      "text": "he system must preserve traceable evidence and clearly separate confirmed results from\nlow-confidence results requiring human review.\n\n2. CURRENT DELIVERY STATUS\nOverall status: AMBER\nCurrent focus:\n- Improve robustness of helmet detection in difficult environmental conditions.\n- Improve number-plate OCR accuracy.\n- Finalize frontend/backend inference API contract.\n- Validate evidence persistence and duplicate-prevention behavior.\n- Prepare end-to-end release-readiness testing.\n\n3. BLOCKERS\nBLOCKER B-01 — ADVERSE-CONDITION DATASET COVERAGE\nOwner: ML Lead\nStatus: OPEN\nThe current validation dat",
+      "created_at": "2026-10-07T03:08:52.623Z"
+    },
+    {
+      "id": "doc-1791342532624-1_chunk_3",
+      "document_id": "doc-1791342532624-1",
+      "document_name": "Helmet_Detection_Industry_Sprint_Standup_Blockers_Actions.txt",
+      "category": "notes",
+      "page": 1,
+      "text": "KER B-01 — ADVERSE-CONDITION DATASET COVERAGE\nOwner: ML Lead\nStatus: OPEN\nThe current validation dataset has insufficient coverage of night scenes, rain, glare,\nmotion blur, and partial occlusion. The team cannot make a reliable release decision\nuntil representative samples are added and evaluated.\nImpact: High\nRequired resolution: Expand the validation dataset and publish scenario-level metrics.\nTarget date: 12 October 2026.\n\nBLOCKER B-02 — OCR ACCURACY BELOW ACCEPTANCE THRESHOLD\nOwner: OCR Engineer\nStatus: OPEN\nNumber-plate OCR is inconsistent for blurred, skewed, small, and poorly illuminat",
+      "created_at": "2026-10-07T03:08:52.623Z"
+    },
+    {
+      "id": "doc-1791342532624-1_chunk_4",
+      "document_id": "doc-1791342532624-1",
+      "document_name": "Helmet_Detection_Industry_Sprint_Standup_Blockers_Actions.txt",
+      "category": "notes",
+      "page": 1,
+      "text": "ineer\nStatus: OPEN\nNumber-plate OCR is inconsistent for blurred, skewed, small, and poorly illuminated plates.\nThis blocks final evidence-quality approval.\nImpact: High\nRequired resolution: Improve preprocessing, plate cropping, confidence thresholds, and\nfallback/manual-review behavior.\nTarget date: 15 October 2026.\n\nBLOCKER B-03 — INFERENCE API CONTRACT NOT FINALIZED\nOwner: Backend Lead\nStatus: OPEN\nThe frontend and backend teams have not finalized the versioned request/response contract.\nIntegration testing is therefore blocked because field names, confidence values, evidence IDs,\nand error",
+      "created_at": "2026-10-07T03:08:52.623Z"
+    },
+    {
+      "id": "doc-1791342532624-1_chunk_5",
+      "document_id": "doc-1791342532624-1",
+      "document_name": "Helmet_Detection_Industry_Sprint_Standup_Blockers_Actions.txt",
+      "category": "notes",
+      "page": 1,
+      "text": "gration testing is therefore blocked because field names, confidence values, evidence IDs,\nand error responses are still subject to change.\nImpact: High\nRequired resolution: Publish the API schema, sample payloads, error model, and obtain\nfrontend/backend sign-off.\nTarget date: 10 October 2026.\n\n4. ACTION ITEMS\nA-01: Add adverse-condition samples to validation dataset.\nOwner: ML Lead\nDue: 12 October 2026\nStatus: In Progress\n\nA-02: Benchmark OCR on blur, skew, low-light, and small-plate scenarios.\nOwner: OCR Engineer\nDue: 15 October 2026\nStatus: Open\n\nA-03: Publish versioned inference API contr",
+      "created_at": "2026-10-07T03:08:52.623Z"
+    },
+    {
+      "id": "doc-1791342532624-1_chunk_6",
+      "document_id": "doc-1791342532624-1",
+      "document_name": "Helmet_Detection_Industry_Sprint_Standup_Blockers_Actions.txt",
+      "category": "notes",
+      "page": 1,
+      "text": ".\nOwner: OCR Engineer\nDue: 15 October 2026\nStatus: Open\n\nA-03: Publish versioned inference API contract.\nOwner: Backend Lead\nDue: 10 October 2026\nStatus: Open\n\nA-04: Document person/helmet/vehicle association rules.\nOwner: ML Lead\nDue: 11 October 2026\nStatus: In Progress\n\nA-05: Approve evidence retention and access-control policy.\nOwner: Product Owner + Security\nDue: 18 October 2026\nStatus: Pending Approval\n\nA-06: Implement idempotency for repeated inference requests.\nOwner: Backend Engineer\nDue: 14 October 2026\nStatus: Open\n\nA-07: Prepare end-to-end test pack covering normal and adverse scena",
+      "created_at": "2026-10-07T03:08:52.623Z"
+    },
+    {
+      "id": "doc-1791342532624-1_chunk_7",
+      "document_id": "doc-1791342532624-1",
+      "document_name": "Helmet_Detection_Industry_Sprint_Standup_Blockers_Actions.txt",
+      "category": "notes",
+      "page": 2,
+      "text": ": 14 October 2026\nStatus: Open\n\nA-07: Prepare end-to-end test pack covering normal and adverse scenarios.\nOwner: QA Lead\nDue: 20 October 2026\nStatus: In Progress\n\nA-08: Add upload validation, negative testing, and security tests.\nOwner: QA + Security\nDue: 25 October 2026\nStatus: Open\n\n5. DECISIONS MADE\nD-01: YOLOv8 will be used as the baseline object-detection approach.\nD-02: Model acceptance will be based on validation performance, not model size alone.\nD-03: Precision, recall, mAP, scenario-level errors, and false-positive/false-negative analysis\n      must be reported before release approva",
+      "created_at": "2026-10-07T03:08:52.623Z"
+    },
+    {
+      "id": "doc-1791342532624-1_chunk_8",
+      "document_id": "doc-1791342532624-1",
+      "document_name": "Helmet_Detection_Industry_Sprint_Standup_Blockers_Actions.txt",
+      "category": "notes",
+      "page": 2,
+      "text": "vel errors, and false-positive/false-negative analysis\n      must be reported before release approval.\nD-04: Helmet status and OCR results with insufficient confidence must be routed to human review.\nD-05: Evidence records must have traceable identifiers and timestamps.\nD-06: Repeated client requests must not create duplicate evidence records.\nD-07: Production deployment requires security, privacy, and evidence-retention approval.\n\n6. RELEASE GATES\nGate 1: Dataset coverage approved.\nGate 2: Helmet detection metrics meet approved thresholds.\nGate 3: OCR benchmark meets approved threshold.\nGate",
+      "created_at": "2026-10-07T03:08:52.623Z"
+    },
+    {
+      "id": "doc-1791342532624-1_chunk_9",
+      "document_id": "doc-1791342532624-1",
+      "document_name": "Helmet_Detection_Industry_Sprint_Standup_Blockers_Actions.txt",
+      "category": "notes",
+      "page": 2,
+      "text": "et detection metrics meet approved thresholds.\nGate 3: OCR benchmark meets approved threshold.\nGate 4: API contract frozen and integration tests pass.\nGate 5: Evidence persistence and idempotency tests pass.\nGate 6: Security and privacy checks pass.\nGate 7: End-to-end test pack passes.\nGate 8: Product Owner signs off release readiness.",
+      "created_at": "2026-10-07T03:08:52.623Z"
+    },
+    {
+      "id": "doc-1791342532624-2_chunk_1",
+      "document_id": "doc-1791342532624-2",
+      "document_name": "Helmet_Detection_Industry_Level_SRS.pdf",
+      "category": "specifications",
+      "page": 1,
+      "text": "SYSTEM REQUIREMENTS SPECIFICATION (SRS)\nPROJECT: Computer Vision Helmet Detection & Number Plate Recognition System\nVERSION: 2.1 | DATE: 12 October 2026 | AUTHOR: System Architecture Team\n\n1. PURPOSE & VISION\nThe Helmet Detection System provides automated traffic camera frame processing, identifying riders operating two-wheeled vehicles without safety helmets. In cases of confirmed non-compliance, vehicle license plates are localized, cropped, and digitized via OCR to construct tamper-evident violation evidence dossiers.\n\n2. SYSTEM SCOPE & FUNCTIONAL MODULES\n2.1 Frame Ingestion: Accepts RTSP/H",
+      "created_at": "2026-10-07T03:08:52.623Z"
+    },
+    {
+      "id": "doc-1791342532624-2_chunk_2",
+      "document_id": "doc-1791342532624-2",
+      "document_name": "Helmet_Detection_Industry_Level_SRS.pdf",
+      "category": "specifications",
+      "page": 1,
+      "text": "olation evidence dossiers.\n\n2. SYSTEM SCOPE & FUNCTIONAL MODULES\n2.1 Frame Ingestion: Accepts RTSP/HLS camera streams and batch static image uploads (.jpg, .png, .mp4).\n2.2 Rider & Helmet Detection: Runs YOLOv8 multi-class object detection (classes: rider, helmet, bare-head, motorcycle).\n2.3 Association Heuristics: Implements spatial Intersection-over-Union (IoU) and centroid proximity to associate bare-head bounding boxes with riders and motorcycles.\n2.4 License Plate Localization & OCR: Crops localized number plates, applies adaptive thresholding, de-skewing, and runs OCR character extractio",
+      "created_at": "2026-10-07T03:08:52.623Z"
+    },
+    {
+      "id": "doc-1791342532624-2_chunk_3",
+      "document_id": "doc-1791342532624-2",
+      "document_name": "Helmet_Detection_Industry_Level_SRS.pdf",
+      "category": "specifications",
+      "page": 1,
+      "text": "localized number plates, applies adaptive thresholding, de-skewing, and runs OCR character extraction with confidence scoring.\n2.5 Evidence Vault: Stores original source frames, plate crops, OCR text, detection bounding boxes, and metadata into immutable records.\n2.6 Human Review Dispatcher: Dispatches detections with confidence scores below 0.85 to the operator review queue.\n\n3. NON-FUNCTIONAL REQUIREMENTS\n- Performance: Maximum p95 latency under 250ms per frame on edge accelerator.\n- Accuracy: Target helmet detection precision >= 94%, OCR character accuracy >= 90%.\n- Idempotency: Duplicate A",
+      "created_at": "2026-10-07T03:08:52.623Z"
+    },
+    {
+      "id": "doc-1791342532624-2_chunk_4",
+      "document_id": "doc-1791342532624-2",
+      "document_name": "Helmet_Detection_Industry_Level_SRS.pdf",
+      "category": "specifications",
+      "page": 1,
+      "text": "Target helmet detection precision >= 94%, OCR character accuracy >= 90%.\n- Idempotency: Duplicate API calls with matching trace keys must result in zero duplicate records.\n- Governance: 90-day evidence retention lifecycle with role-based cryptographic access control.",
+      "created_at": "2026-10-07T03:08:52.623Z"
+    },
+    {
+      "id": "doc-1791342532624-3_chunk_1",
+      "document_id": "doc-1791342532624-3",
+      "document_name": "Helmet_Detection_Industry_Level_Project_Status_Report.pdf",
+      "category": "reports",
+      "page": 1,
+      "text": "PROJECT STATUS REPORT — SPRINT 04\nPROJECT: Helmet Detection & OCR Enforcement System\nREPORTING PERIOD: 01 October 2026 - 15 October 2026\nOVERALL HEALTH STATUS: AMBER (At Risk)\n\n1. EXECUTIVE SUMMARY\nSprint 04 delivery velocity has slowed due to three active impediments requiring cross-functional mitigation. Model evaluation under adverse lighting conditions is constrained by limited night-scene validation data (Blocker B-01). Plate OCR accuracy under motion skew currently benchmarks below deployment gate thresholds (Blocker B-02). Backend API contract freezing is pending frontend signoff (Block",
+      "created_at": "2026-10-07T03:08:52.623Z"
+    },
+    {
+      "id": "doc-1791342532624-3_chunk_2",
+      "document_id": "doc-1791342532624-3",
+      "document_name": "Helmet_Detection_Industry_Level_Project_Status_Report.pdf",
+      "category": "reports",
+      "page": 1,
+      "text": "ent gate thresholds (Blocker B-02). Backend API contract freezing is pending frontend signoff (Blocker B-03).\n\n2. MILESTONE PROGRESS\n- Ingestion Pipeline: 100% Completed\n- YOLOv8 Base Model Architecture: 90% Completed\n- Adverse Weather Augmented Training: 45% (Blocked by dataset coverage)\n- OCR Character Recognition Engine: 60% (Under tuning)\n- REST API Contract & Idempotency: 70% (Under review)\n- Evidence Persistence DB: 85% Completed\n\n3. CRITICAL RISK RADAR\n- Risk RSK-01 (Adverse Weather Accuracy): Critical severity, 75% probability.\n- Risk RSK-02 (Edge Hardware Latency Budget): High severit",
+      "created_at": "2026-10-07T03:08:52.623Z"
+    },
+    {
+      "id": "doc-1791342532624-3_chunk_3",
+      "document_id": "doc-1791342532624-3",
+      "document_name": "Helmet_Detection_Industry_Level_Project_Status_Report.pdf",
+      "category": "reports",
+      "page": 1,
+      "text": "acy): Critical severity, 75% probability.\n- Risk RSK-02 (Edge Hardware Latency Budget): High severity, 60% probability.\n- Risk RSK-03 (API Schema Freezing): High severity, 50% probability.\n\n4. NEXT STEPS & SPRINT 05 OBJECTIVES\nResolve B-01 by expanding validation frames. Benchmark INT8 quantization for YOLOv8. Freeze versioned REST schema by 10 October 2026.",
+      "created_at": "2026-10-07T03:08:52.623Z"
+    },
+    {
+      "id": "doc-1791342532624-4_chunk_1",
+      "document_id": "doc-1791342532624-4",
+      "document_name": "Helmet_Detection_Industry_Level_Risk_Register.xlsx",
+      "category": "risks",
+      "page": 1,
+      "text": "Risk_ID,Category,Risk_Title,Probability,Impact,Severity,Mitigation_Strategy,Owner,Status\nRSK-01,Technical,Adverse Environmental Lighting & Weather Generalization Gap,75%,85%,Critical,\"Add synthetic glare, rain augmentation, and expand night validation dataset.\",ML Lead,Open\nRSK-02,Technical,Inference Latency Exceeding Target on Edge Hardware,60%,75%,High,\"Benchmark TensorRT INT8 quantization and asynchronous frame batching.\",ML Lead + DevOps,Open\nRSK-03,Schedule,Inference API Contract Freezing Delays,50%,70%,High,\"Freeze versioned OpenAPI spec and deploy mock provider for client integration.\",",
+      "created_at": "2026-10-07T03:08:52.623Z"
+    },
+    {
+      "id": "doc-1791342532624-4_chunk_2",
+      "document_id": "doc-1791342532624-4",
+      "document_name": "Helmet_Detection_Industry_Level_Risk_Register.xlsx",
+      "category": "risks",
+      "page": 1,
+      "text": "elays,50%,70%,High,\"Freeze versioned OpenAPI spec and deploy mock provider for client integration.\",Backend Lead,Open\nRSK-04,Data Integrity,Duplicate Evidence Records Generated on Retries,45%,65%,High,\"Implement idempotency keys and unique compound database constraints.\",Backend Engineer,Open\nRSK-05,Compliance,Evidence Retention Policy Governance Approval Delays,40%,80%,High,\"Engage Data Protection Officer and Product Owner for legal policy signoff.\",Product Owner + Security,Open",
+      "created_at": "2026-10-07T03:08:52.623Z"
+    },
+    {
+      "id": "doc-1791342532625-5_chunk_1",
+      "document_id": "doc-1791342532625-5",
+      "document_name": "Helmet_Detection_Industry_Level_Project_Plan_Milestones.xlsx",
+      "category": "plans",
+      "page": 1,
+      "text": "Milestone_ID,Milestone_Name,Target_Date,Status,Owner,Deliverables\nM-01,Adverse-Condition Dataset Coverage Signoff,2026-10-12,In Progress,ML Lead,Synthetic glare and night test manifest\nM-02,OCR Accuracy Benchmark Validation,2026-10-15,In Progress,OCR Engineer,Held-out benchmark accuracy report >= 90%\nM-03,Inference API Contract Freezing,2026-10-10,In Progress,Backend Lead,Versioned OpenAPI 3.0 specification & mocks\nM-04,Evidence Persistence & Idempotency Signoff,2026-10-14,Upcoming,Backend Engineer,Automated retry tests & DB uniqueness constraints\nM-05,End-to-End Representative Test Pack Execu",
+      "created_at": "2026-10-07T03:08:52.623Z"
+    },
+    {
+      "id": "doc-1791342532625-5_chunk_2",
+      "document_id": "doc-1791342532625-5",
+      "document_name": "Helmet_Detection_Industry_Level_Project_Plan_Milestones.xlsx",
+      "category": "plans",
+      "page": 1,
+      "text": "eer,Automated retry tests & DB uniqueness constraints\nM-05,End-to-End Representative Test Pack Execution,2026-10-20,Upcoming,QA Lead,Traceable test matrix across 13 core scenarios\nM-06,Production Governance & Security Signoff,2026-10-25,Upcoming,Security Lead,Evidence retention policy and RBAC audit",
+      "created_at": "2026-10-07T03:08:52.623Z"
+    },
+    {
+      "id": "doc-1791342532625-6_chunk_1",
+      "document_id": "doc-1791342532625-6",
+      "document_name": "Helmet_Detection_Updated_Meeting_Minutes_with_Blockers.docx",
+      "category": "notes",
+      "page": 1,
+      "text": "ARCHITECTURE REVIEW BOARD & SPRINT RETROSPECTIVE MINUTES\nPROJECT: Helmet Detection & Number Plate Recognition Platform\nDATE: 14 October 2026 | LOCATION: Virtual Sync Room Alpha\nATTENDEES: ML Lead, OCR Engineer, Backend Lead, QA Lead, DevOps Lead, Product Owner\n\nAGENDA:\n1. Review of Active Delivery Blockers (B-01, B-02, B-03)\n2. Evaluation of YOLOv8 Baseline Metrics vs Operational SLA\n3. Status of OCR Pipeline Tuning for Distant and Skewed Plates\n4. REST API Schema Freezing & Idempotency Strategy\n\nDISCUSSION NOTES:\n- Blocker B-01 (Dataset Coverage): ML Lead confirmed that the current validation",
+      "created_at": "2026-10-07T03:08:52.623Z"
+    },
+    {
+      "id": "doc-1791342532625-6_chunk_2",
+      "document_id": "doc-1791342532625-6",
+      "document_name": "Helmet_Detection_Updated_Meeting_Minutes_with_Blockers.docx",
+      "category": "notes",
+      "page": 1,
+      "text": "DISCUSSION NOTES:\n- Blocker B-01 (Dataset Coverage): ML Lead confirmed that the current validation set lacks representative rain, glare, and night camera frames. Decision: Allocate 4 engineering days to ingest 2,500 labeled adverse frames before model acceptance signoff.\n- Blocker B-02 (OCR Accuracy): OCR Engineer reported plate text accuracy sits at 82% against target 90%. Resolution: Apply bilateral filtering, plate perspective correction, and route confidence < 0.85 to human review.\n- Blocker B-03 (API Contract): Backend Lead presented OpenAPI v2 schema. Frontend lead requested standardiz",
+      "created_at": "2026-10-07T03:08:52.623Z"
+    },
+    {
+      "id": "doc-1791342532625-6_chunk_3",
+      "document_id": "doc-1791342532625-6",
+      "document_name": "Helmet_Detection_Updated_Meeting_Minutes_with_Blockers.docx",
+      "category": "notes",
+      "page": 1,
+      "text": "er B-03 (API Contract): Backend Lead presented OpenAPI v2 schema. Frontend lead requested standardized evidence trace identifiers. Target signoff date: 10 October 2026.\n\nAGREED ACTION ITEMS:\n- A-01: ML Lead to deliver expanded dataset manifest by 12 October 2026.\n- A-02: OCR Engineer to benchmark perspective transformation by 15 October 2026.\n- A-03: Backend Lead to freeze API schema by 10 October 2026.\n- A-04: Security Lead to sign off 90-day evidence retention policy by 18 October 2026.",
+      "created_at": "2026-10-07T03:08:52.623Z"
     }
   ]
 }

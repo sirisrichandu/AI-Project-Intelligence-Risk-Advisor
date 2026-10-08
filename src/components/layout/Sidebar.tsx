@@ -33,7 +33,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       items: [
         { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
         { id: 'documents', label: 'Documents', icon: FolderGit2 },
-        { id: 'intelligence', label: 'Project Intelligence', icon: BrainCircuit },
+        { id: 'intelligence', label: 'Scope and Milestones', icon: BrainCircuit },
       ],
     },
     {

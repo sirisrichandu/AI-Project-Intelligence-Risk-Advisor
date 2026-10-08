@@ -1,12 +1,13 @@
 export interface ProjectDocument {
   id: string;
   name: string;
-  type: 'PDF' | 'DOCX' | 'CSV' | 'TXT' | 'XLSX';
+  type: 'PDF' | 'DOCX' | 'CSV' | 'TXT' | 'XLSX' | string;
   size: string;
   uploadDate: string;
   status: 'COMPLETED' | 'PROCESSING' | 'FAILED';
   chunkCount: number;
-  category: 'requirements' | 'architecture' | 'meetings' | 'tasks' | 'general';
+  category: 'requirements' | 'architecture' | 'meetings' | 'tasks' | 'general' | string;
+  content?: string;
 }
 
 export interface MilestoneItem {
@@ -51,8 +52,13 @@ export interface BlockerItem {
   description: string;
   impact: string;
   priority: 'Critical' | 'High' | 'Medium' | 'Low';
-  status: 'Active' | 'Investigating' | 'Resolved';
+  status: 'Active' | 'Investigating' | 'Resolved' | string;
   suggestedResolution: string;
+  suggestedAction?: string;
+  owner?: string;
+  dueDate?: string;
+  dependency?: string;
+  impactedTasks?: string[];
 }
 
 export interface ActionItem {
