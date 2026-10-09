@@ -368,7 +368,7 @@ async function forwardToFastApi(req: Request, res: Response, targetPath: string)
 // RUNTIME STATE & MULTI-AGENT EXTRACTION
 // ==========================================
 
-let projectScope: any = {
+export const EMPTY_SCOPE = {
   objectives: [] as string[],
   scope: 'Knowledge base is currently empty. Upload your project documents to extract strategic objectives and deliverables.',
   requirements: [] as string[],
@@ -379,6 +379,8 @@ let projectScope: any = {
   summary: 'No documents uploaded yet. Upload your project documents to extract strategic objectives and deliverables.',
 };
 
+let projectScope: any = { ...EMPTY_SCOPE };
+
 let projectRisks: any[] = [];
 let projectBlockers: any[] = [];
 let projectActions: any[] = [];
@@ -387,6 +389,17 @@ let chatHistory: any[] = [];
 let latestDocOutput = '';
 
 function parseDocumentIntelligence(docs: any[]) {
+  if (!docs || docs.length === 0) {
+    return {
+      blockers: [],
+      actions: [],
+      tasks: [],
+      scope: { ...EMPTY_SCOPE },
+      risks: [],
+      documentationOutput: '',
+    };
+  }
+
   const combinedText = docs.map((d: any) => d.content || '').join('\n\n');
   const extractedBlockers: any[] = [];
   const extractedActions: any[] = [];
@@ -789,13 +802,124 @@ function parseDocumentIntelligence(docs: any[]) {
     );
   }
 
+  // Dynamic extraction for non-helmet documents
+  const primaryDocName = docs[0]?.name?.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ') || 'Uploaded Artifacts';
+  const textLines = combinedText.split(/\r?\n/).map((l: string) => l.trim()).filter(Boolean);
+
+  const parsedMilestones: Array<{ name: string; targetDate: string; status: 'Completed' | 'In Progress' | 'Upcoming' }> = [];
+  const parsedObjectives: string[] = [];
+  const parsedDeliverables: string[] = [];
+  const parsedRequirements: string[] = [];
+  const parsedConstraints: string[] = [];
+
+  for (const line of textLines) {
+    const clean = line.replace(/^[#*•\s-]+/, '').trim();
+    if (!clean) continue;
+
+    // Milestones
+    if (/^(?:milestone|phase|sprint|release|m[-0-9])/i.test(clean) && clean.length > 6) {
+      const dateMatch = clean.match(/\b(202\d-[0-1]\d-[0-3]\d|\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{1,2}(?:,\s+\d{4})?)\b/i);
+      const name = clean.replace(/\b(202\d-[0-1]\d-[0-3]\d|\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{1,2}(?:,\s+\d{4})?)\b/gi, '')
+        .replace(/\b(?:target|due|date|status|completed|in progress|upcoming):?\s*/gi, '')
+        .trim().slice(0, 90);
+      if (name.length > 5 && !parsedMilestones.some((m) => m.name.toLowerCase() === name.toLowerCase())) {
+        parsedMilestones.push({
+          name,
+          targetDate: dateMatch ? dateMatch[0] : '2026-10-25',
+          status: clean.toLowerCase().includes('complete') ? 'Completed' : clean.toLowerCase().includes('progress') ? 'In Progress' : 'Upcoming',
+        });
+      }
+    }
+
+    // Objectives / Goals
+    if (/^(?:objective|goal|purpose):?\s+/i.test(clean) || (clean.length > 15 && clean.length < 160 && /^(?:deliver|implement|establish|develop|ensure|provide|build)\b/i.test(clean))) {
+      const obj = clean.replace(/^(?:objective|goal|purpose):?\s+/i, '').trim();
+      if (obj.length > 10 && !parsedObjectives.includes(obj) && parsedObjectives.length < 6) {
+        parsedObjectives.push(obj);
+      }
+    }
+
+    // Deliverables
+    if (/^(?:deliverable|output|package):?\s+/i.test(clean) || (clean.length > 15 && clean.length < 140 && /^(?:module|service|engine|component|dashboard|api|pipeline)\b/i.test(clean))) {
+      const del = clean.replace(/^(?:deliverable|output|package):?\s+/i, '').trim();
+      if (del.length > 8 && !parsedDeliverables.includes(del) && parsedDeliverables.length < 6) {
+        parsedDeliverables.push(del);
+      }
+    }
+
+    // Requirements
+    if (/^(?:requirement|srs|spec|feature):?\s+/i.test(clean) || (clean.length > 20 && clean.length < 180 && /\b(?:must|shall|should support|requires)\b/i.test(clean))) {
+      const req = clean.replace(/^(?:requirement|srs|spec|feature):?\s+/i, '').trim();
+      if (req.length > 12 && !parsedRequirements.includes(req) && parsedRequirements.length < 6) {
+        parsedRequirements.push(req);
+      }
+    }
+
+    // Constraints
+    if (/^(?:constraint|limitation|sla|security):?\s+/i.test(clean) || (clean.length > 15 && clean.length < 160 && /\b(?:latency|retention|encryption|uptime|sla|budget)\b/i.test(clean))) {
+      const con = clean.replace(/^(?:constraint|limitation):?\s+/i, '').trim();
+      if (con.length > 10 && !parsedConstraints.includes(con) && parsedConstraints.length < 5) {
+        parsedConstraints.push(con);
+      }
+    }
+  }
+
+  const finalMilestones = parsedMilestones.length > 0
+    ? parsedMilestones
+    : [
+        { name: `${primaryDocName} — Ingestion & Scope Baseline`, targetDate: '2026-10-12', status: 'Completed' as const },
+        { name: 'Core Architecture & Implementation Verification', targetDate: '2026-10-18', status: 'In Progress' as const },
+        { name: 'Integration Testing & Quality Gate Signoff', targetDate: '2026-10-24', status: 'Upcoming' as const },
+        { name: 'Production Deployment & Acceptance Release', targetDate: '2026-10-31', status: 'Upcoming' as const },
+      ];
+
+  const finalObjectives = parsedObjectives.length > 0
+    ? parsedObjectives
+    : [
+        `Deliver functional objectives specified in ${primaryDocName}`,
+        'Automate multi-agent risk detection, blocker mitigation tracking, and composite health assessment',
+        `Ground project reasoning in persistent ChromaDB vector storage for ${docs.length} uploaded artifact(s)`,
+      ];
+
+  const finalDeliverables = parsedDeliverables.length > 0
+    ? parsedDeliverables
+    : [
+        `${primaryDocName} Specification & Architecture Dossier`,
+        'Risk Priority Matrix & Mitigation Roadmap',
+        'Active Blocker Register & Sprint Action Items',
+        'Unified Knowledge Base with Semantic Chunking',
+      ];
+
+  const finalRequirements = parsedRequirements.length > 0
+    ? parsedRequirements
+    : [
+        `System must fulfill core capabilities specified in ${primaryDocName}.`,
+        'Autonomous multi-agent verification (Scope, Risks, Blockers, Actions, Health, Documentation).',
+        'Persistent ChromaDB vector indexing with source citation.',
+        'High-reliability API integration adhering to project governance.',
+      ];
+
+  const finalConstraints = parsedConstraints.length > 0
+    ? parsedConstraints
+    : [
+        'Must operate with zero latency across vector search operations.',
+        'Must enforce role-based access control and strict data privacy standards.',
+        'Must satisfy project quality and security compliance gates before release.',
+      ];
+
+  const finalDeadlines = finalMilestones.map((m) => ({
+    item: m.name,
+    date: m.targetDate,
+    criticality: (m.status === 'In Progress' ? 'High' : 'Medium') as 'High' | 'Medium',
+  }));
+
   const extractedScope = {
     summary: isHelmetDetection
       ? `Project intelligence synthesized from ${docs.length} uploaded artifacts covering the Helmet Detection & Number Plate Recognition computer vision system. High priority on model validation under adverse weather, OCR plate accuracy, and evidence persistence.`
-      : `Project intelligence synthesized from ${docs.length} uploaded artifacts. Comprehensive extraction across delivery milestones, scope boundaries, and risk registers.`,
+      : `Project intelligence synthesized from ${docs.length} uploaded artifact(s) (${docs.map((d: any) => d.name).join(', ')}). Comprehensive extraction across strategic objectives, core deliverables, milestone roadmap, and risk registers.`,
     scope: isHelmetDetection
       ? `Computer-vision violation enforcement system boundaries: covers traffic camera frame ingestion, YOLOv8 helmet detection, vehicle plate cropping, OCR extraction, evidence persistence, and human review routing for uncertain decisions.`
-      : `Autonomous multi-agent intelligence analyzing ${docs.length} artifacts (${docs.length} indexed ChromaDB vector collections). Scope boundaries encompass full functional specification and sprint delivery roadmap.`,
+      : `System boundaries established from ${docs.length} project artifact(s). Covers end-to-end deliverables, delivery milestones, dependency management, and quality signoff gates for ${primaryDocName}.`,
     objectives: isHelmetDetection
       ? [
           'Develop a robust computer-vision pipeline detecting helmet compliance from traffic video feeds.',
@@ -804,11 +928,7 @@ function parseDocumentIntelligence(docs: any[]) {
           'Route low-confidence detections and ambiguous plate crops to an operator review workflow.',
           'Prevent duplicate violation records on network retries using idempotency keys.',
         ]
-      : [
-          `Ground autonomous intelligence in ChromaDB vector repository for ${docs.length} project documents`,
-          'Automate multi-agent risk detection, blocker mitigation tracking, and composite health assessment',
-          'Generate executive documentation dossiers directly from uploaded specifications',
-        ],
+      : finalObjectives,
     deliverables: isHelmetDetection
       ? [
           'YOLOv8 Helmet Detection Model & Inference Engine',
@@ -817,12 +937,7 @@ function parseDocumentIntelligence(docs: any[]) {
           'Operator Review Queue for Low-Confidence Detections',
           'End-to-End Test Pack covering Adverse Environmental Scenarios',
         ]
-      : [
-          'Risk Priority Matrix & Mitigation Roadmap',
-          'Active Blocker Register & Resolution Plan',
-          'Sprint Action Items & Backlog Allocation',
-          'Executive Project Documentation Dossier',
-        ],
+      : finalDeliverables,
     requirements: isHelmetDetection
       ? [
           'Dataset Coverage: Model must validate across low-light, rain, glare, and motion-blur frames.',
@@ -832,12 +947,7 @@ function parseDocumentIntelligence(docs: any[]) {
           'Data Governance: Approved evidence retention duration and access-control security policies.',
           'Input Validation: Secure file upload handling rejecting malformed or oversized inputs.',
         ]
-      : [
-          'High-throughput vector search via ChromaDB persistent store',
-          'Multi-agent pipeline orchestration (Scope, Risk, Blocker, Action, Health, DocGen)',
-          'Direct REST integration between React frontend and FastAPI backend',
-          'Traceable backlog item mapping from SRS and project proposals',
-        ],
+      : finalRequirements,
     milestones: isHelmetDetection
       ? [
           { name: 'Adverse-Condition Dataset Coverage Signoff', targetDate: '2026-10-12', status: 'In Progress' as const },
@@ -847,12 +957,7 @@ function parseDocumentIntelligence(docs: any[]) {
           { name: 'End-to-End Representative Test Pack Execution', targetDate: '2026-10-20', status: 'Upcoming' as const },
           { name: 'Production Governance & Release Signoff', targetDate: '2026-10-25', status: 'Upcoming' as const },
         ]
-      : [
-          { name: 'Document Vectorization & RAG Indexing', targetDate: '2026-10-10', status: 'Completed' as const },
-          { name: 'Autonomous Multi-Agent Extraction', targetDate: '2026-10-15', status: 'In Progress' as const },
-          { name: 'Health Score Synthesis & Risk Mapping', targetDate: '2026-10-20', status: 'Upcoming' as const },
-          { name: 'Executive Master Dossier Signoff', targetDate: '2026-10-28', status: 'Upcoming' as const },
-        ],
+      : finalMilestones,
     deadlines: isHelmetDetection
       ? [
           { item: 'Inference API Contract Freezing', date: '2026-10-10', criticality: 'High' as const },
@@ -862,11 +967,7 @@ function parseDocumentIntelligence(docs: any[]) {
           { item: 'Full E2E Release Test Pack Execution', date: '2026-10-20', criticality: 'Medium' as const },
           { item: 'Target Production Deployment Window', date: '2026-10-25', criticality: 'High' as const },
         ]
-      : [
-          { item: 'Sprint Deliverables Review', date: '2026-10-15', criticality: 'High' as const },
-          { item: 'Risk Mitigation Sign-off', date: '2026-10-20', criticality: 'Medium' as const },
-          { item: 'Production Release Window', date: '2026-10-31', criticality: 'High' as const },
-        ],
+      : finalDeadlines,
     constraints: isHelmetDetection
       ? [
           'Must operate within target p95 inference latency on edge deployment hardware.',
@@ -874,11 +975,7 @@ function parseDocumentIntelligence(docs: any[]) {
           'Repeated client requests with identical idempotency key must create only one evidence record.',
           'Production rollout strictly blocked until security and privacy evidence-retention policies are signed off.',
         ]
-      : [
-          'Must operate with zero latency across vector search operations',
-          'Must enforce role-based access control and strict data privacy',
-          'Must satisfy production compliance standards',
-        ],
+      : finalConstraints,
   };
 
   const documentationDossier = `1. User Stories & Scope Synthesis
@@ -948,16 +1045,23 @@ function computeHealth() {
 
 function ensureIntelligenceParsed(force = false) {
   const store = readChromaStore();
-  if (store.documents.length > 0) {
-    if (force || projectBlockers.length === 0 || projectScope.objectives.length === 0 || !latestDocOutput || projectRisks.length === 0) {
-      const parsed = parseDocumentIntelligence(store.documents);
-      projectBlockers = parsed.blockers;
-      projectActions = parsed.actions;
-      projectTasksAtRisk = parsed.tasks;
-      projectScope = parsed.scope;
-      projectRisks = parsed.risks;
-      latestDocOutput = parsed.documentationOutput;
-    }
+  if (store.documents.length === 0) {
+    projectScope = { ...EMPTY_SCOPE };
+    projectRisks = [];
+    projectBlockers = [];
+    projectActions = [];
+    projectTasksAtRisk = [];
+    latestDocOutput = '';
+    return;
+  }
+  if (force || projectBlockers.length === 0 || projectScope.objectives.length === 0 || !latestDocOutput || projectRisks.length === 0) {
+    const parsed = parseDocumentIntelligence(store.documents);
+    projectBlockers = parsed.blockers;
+    projectActions = parsed.actions;
+    projectTasksAtRisk = parsed.tasks;
+    projectScope = parsed.scope;
+    projectRisks = parsed.risks;
+    latestDocOutput = parsed.documentationOutput;
   }
 }
 
@@ -980,19 +1084,21 @@ app.get('/api/project/summary', async (req: Request, res: Response) => {
       ? store.documents[0].name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ')
       : 'Project Workspace';
 
+  const hasDocs = store.documents.length > 0;
+
   res.json({
     projectName,
-    projectDeadline: store.documents.length > 0 ? 'Under Evaluation' : 'Ready For Upload',
+    projectDeadline: hasDocs ? (projectScope.deadlines?.[0]?.date || 'Under Evaluation') : 'Ready For Upload',
     healthScore: health.overall,
     healthStatus: health.status,
     totalDocuments: store.documents.length,
-    totalRisks: projectRisks.length,
-    criticalRisks: projectRisks.filter((r) => r.severity === 'Critical').length,
-    highRisks: projectRisks.filter((r) => r.severity === 'High').length,
-    activeBlockers: projectBlockers.filter((b) => b.status === 'Active').length,
-    pendingActions: projectActions.filter((a) => a.status === 'Pending' || a.status === 'In Progress').length,
-    upcomingDeadlines: projectScope.deadlines.length,
-    tasksAtRiskCount: projectTasksAtRisk.length,
+    totalRisks: hasDocs ? projectRisks.length : 0,
+    criticalRisks: hasDocs ? projectRisks.filter((r) => r.severity === 'Critical').length : 0,
+    highRisks: hasDocs ? projectRisks.filter((r) => r.severity === 'High').length : 0,
+    activeBlockers: hasDocs ? projectBlockers.filter((b) => b.status === 'Active').length : 0,
+    pendingActions: hasDocs ? projectActions.filter((a) => a.status === 'Pending' || a.status === 'In Progress').length : 0,
+    upcomingDeadlines: hasDocs ? (projectScope.milestones?.length || projectScope.deadlines?.length || 0) : 0,
+    tasksAtRiskCount: hasDocs ? projectTasksAtRisk.length : 0,
   });
 });
 
@@ -1235,6 +1341,7 @@ app.delete('/api/documents/:id', async (req: Request, res: Response) => {
   }
 
   if (updatedDocs.length === 0) {
+    projectScope = { ...EMPTY_SCOPE };
     projectRisks = [];
     projectBlockers = [];
     projectActions = [];
@@ -1252,6 +1359,7 @@ const clearAllHandler = async (req: Request, res: Response) => {
   if (await forwardToFastApi(req, res, '/api/documents/clear-all')) return;
 
   writeChromaStore([], []);
+  projectScope = { ...EMPTY_SCOPE };
   projectRisks = [];
   projectBlockers = [];
   projectActions = [];
@@ -1281,6 +1389,12 @@ app.post('/api/pipeline/run', async (req: Request, res: Response) => {
 
   const store = readChromaStore();
   if (store.documents.length === 0) {
+    projectScope = { ...EMPTY_SCOPE };
+    projectRisks = [];
+    projectBlockers = [];
+    projectActions = [];
+    projectTasksAtRisk = [];
+    latestDocOutput = '';
     return res.json({
       message: 'No documents in knowledge base. Upload your project documents to run multi-agent analysis.',
       scope: projectScope,
@@ -1491,11 +1605,20 @@ app.get('/api/sample-files/download/:filename', (req: Request, res: Response) =>
 // POST /api/project/reset
 app.post('/api/project/reset', (req: Request, res: Response) => {
   writeChromaStore([], []);
+  projectScope = { ...EMPTY_SCOPE };
   projectRisks = [];
   projectBlockers = [];
   projectActions = [];
   projectTasksAtRisk = [];
   latestDocOutput = '';
+  try {
+    if (fs.existsSync(FILES_DIR)) {
+      const diskFiles = fs.readdirSync(FILES_DIR);
+      for (const f of diskFiles) {
+        fs.unlinkSync(path.join(FILES_DIR, f));
+      }
+    }
+  } catch {}
   res.json({ message: 'Project workspace reset to clean initial state.', health: computeHealth() });
 });
 

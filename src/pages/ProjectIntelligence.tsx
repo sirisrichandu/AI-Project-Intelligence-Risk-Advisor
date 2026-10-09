@@ -10,13 +10,28 @@ import {
   FileText,
   CheckCircle2,
   Calendar,
+  FolderGit2,
+  ArrowRight,
 } from 'lucide-react';
 
 interface ProjectIntelligenceProps {
   scope: ProjectScopeData;
+  hasDocuments?: boolean;
+  onNavigate?: (page: string) => void;
 }
 
-export const ProjectIntelligence: React.FC<ProjectIntelligenceProps> = ({ scope }) => {
+export const ProjectIntelligence: React.FC<ProjectIntelligenceProps> = ({
+  scope,
+  hasDocuments = true,
+  onNavigate,
+}) => {
+  const isEmpty =
+    !hasDocuments ||
+    !scope ||
+    ((!scope.milestones || scope.milestones.length === 0) &&
+      (!scope.objectives || scope.objectives.length === 0) &&
+      (!scope.deliverables || scope.deliverables.length === 0));
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -32,22 +47,80 @@ export const ProjectIntelligence: React.FC<ProjectIntelligenceProps> = ({ scope 
             Synthesized objectives, deliverables, milestones, requirements, and constraints from uploaded project artifacts.
           </p>
         </div>
+        {onNavigate && (
+          <button
+            onClick={() => onNavigate('documents')}
+            className="self-start sm:self-auto px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-medium text-slate-300 hover:text-white flex items-center gap-2 transition-colors"
+          >
+            <FolderGit2 className="w-3.5 h-3.5 text-teal-400" />
+            <span>Manage Documents</span>
+          </button>
+        )}
       </div>
 
-      {/* Scope Summary Card */}
-      <div className="glass-panel p-6 border-slate-800 bg-gradient-to-br from-slate-900/90 to-slate-900/40">
-        <div className="flex items-center gap-2 mb-3">
-          <FileText className="w-4 h-4 text-teal-400" />
-          <h3 className="text-sm font-semibold text-slate-100">Executive Scope Summary</h3>
+      {isEmpty ? (
+        /* Empty State Card when 0 documents exist */
+        <div className="glass-panel p-10 border-slate-800 text-center flex flex-col items-center justify-center max-w-2xl mx-auto my-6">
+          <div className="w-16 h-16 rounded-2xl bg-teal-500/10 border border-teal-500/20 flex items-center justify-center text-teal-400 mb-5 shadow-lg shadow-teal-500/5">
+            <Milestone className="w-8 h-8" />
+          </div>
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-900 border border-slate-800 text-[11px] font-mono text-slate-400 mb-3">
+            <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+            <span>Awaiting Document Ingestion</span>
+          </div>
+          <h3 className="text-xl font-bold text-white mb-2">
+            No Scope or Milestones Extracted
+          </h3>
+          <p className="text-xs text-slate-400 max-w-md mx-auto mb-6 leading-relaxed">
+            The knowledge base currently contains 0 project documents. Upload your Project Specification, SRS, SOW, Task Backlog, or Architecture Overview in the Documents section to automatically synthesize delivery milestones and scope.
+          </p>
+
+          {onNavigate && (
+            <button
+              onClick={() => onNavigate('documents')}
+              className="px-5 py-2.5 rounded-lg bg-teal-500 hover:bg-teal-400 active:bg-teal-600 text-slate-950 font-semibold text-xs transition-colors flex items-center gap-2 shadow-sm shadow-teal-500/20"
+            >
+              <FolderGit2 className="w-4 h-4" />
+              <span>Go to Documents & Upload</span>
+              <ArrowRight className="w-3.5 h-3.5 ml-1" />
+            </button>
+          )}
+
+          <div className="mt-8 pt-6 border-t border-slate-800/80 w-full grid grid-cols-2 sm:grid-cols-4 gap-3 text-left">
+            <div className="p-3 rounded-lg bg-slate-900/50 border border-slate-800/60">
+              <span className="text-[11px] font-semibold text-teal-400 block mb-1">Objectives</span>
+              <span className="text-[10px] text-slate-400">Goals & business outcomes</span>
+            </div>
+            <div className="p-3 rounded-lg bg-slate-900/50 border border-slate-800/60">
+              <span className="text-[11px] font-semibold text-indigo-400 block mb-1">Deliverables</span>
+              <span className="text-[10px] text-slate-400">Tangible system packages</span>
+            </div>
+            <div className="p-3 rounded-lg bg-slate-900/50 border border-slate-800/60">
+              <span className="text-[11px] font-semibold text-amber-400 block mb-1">Milestones</span>
+              <span className="text-[10px] text-slate-400">Target dates & status roadmap</span>
+            </div>
+            <div className="p-3 rounded-lg bg-slate-900/50 border border-slate-800/60">
+              <span className="text-[11px] font-semibold text-rose-400 block mb-1">Constraints</span>
+              <span className="text-[10px] text-slate-400">SLAs & technical boundaries</span>
+            </div>
+          </div>
         </div>
-        <p className="text-xs text-slate-300 leading-relaxed max-w-4xl">
-          {scope.summary}
-        </p>
-        <div className="mt-4 pt-3 border-t border-slate-800/80 text-xs text-slate-400">
-          <span className="font-semibold text-teal-400">System Boundaries: </span>
-          {scope.scope}
-        </div>
-      </div>
+      ) : (
+        <>
+          {/* Scope Summary Card */}
+          <div className="glass-panel p-6 border-slate-800 bg-gradient-to-br from-slate-900/90 to-slate-900/40">
+            <div className="flex items-center gap-2 mb-3">
+              <FileText className="w-4 h-4 text-teal-400" />
+              <h3 className="text-sm font-semibold text-slate-100">Executive Scope Summary</h3>
+            </div>
+            <p className="text-xs text-slate-300 leading-relaxed max-w-4xl">
+              {scope.summary}
+            </p>
+            <div className="mt-4 pt-3 border-t border-slate-800/80 text-xs text-slate-400">
+              <span className="font-semibold text-teal-400">System Boundaries: </span>
+              {scope.scope}
+            </div>
+          </div>
 
       {/* Objectives & Deliverables Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -200,6 +273,8 @@ export const ProjectIntelligence: React.FC<ProjectIntelligenceProps> = ({ scope 
           ))}
         </div>
       </div>
+        </>
+      )}
     </div>
   );
 };

@@ -216,8 +216,23 @@ export default function App() {
               />
             )}
 
-            {activePage === 'intelligence' && scope && (
-              <ProjectIntelligence scope={scope} />
+            {activePage === 'intelligence' && (
+              <ProjectIntelligence
+                scope={
+                  scope || {
+                    objectives: [],
+                    scope: 'Knowledge base is currently empty. Upload your project documents to extract strategic objectives and deliverables.',
+                    requirements: [],
+                    deliverables: [],
+                    milestones: [],
+                    deadlines: [],
+                    constraints: [],
+                    summary: 'No documents uploaded yet. Upload your project documents to extract strategic objectives and deliverables.',
+                  }
+                }
+                hasDocuments={documents.length > 0}
+                onNavigate={(page) => setActivePage(page)}
+              />
             )}
 
             {activePage === 'risks' && (
