@@ -1,0 +1,6 @@
+Risk_ID,Category,Risk_Title,Probability,Impact,Severity,Mitigation_Strategy,Owner,Status
+RSK-01,Technical,Adverse Environmental Lighting & Weather Generalization Gap,75%,85%,Critical,"Add synthetic glare, rain augmentation, and expand night validation dataset.",ML Lead,Open
+RSK-02,Technical,Inference Latency Exceeding Target on Edge Hardware,60%,75%,High,"Benchmark TensorRT INT8 quantization and asynchronous frame batching.",ML Lead + DevOps,Open
+RSK-03,Schedule,Inference API Contract Freezing Delays,50%,70%,High,"Freeze versioned OpenAPI spec and deploy mock provider for client integration.",Backend Lead,Open
+RSK-04,Data Integrity,Duplicate Evidence Records Generated on Retries,45%,65%,High,"Implement idempotency keys and unique compound database constraints.",Backend Engineer,Open
+RSK-05,Compliance,Evidence Retention Policy Governance Approval Delays,40%,80%,High,"Engage Data Protection Officer and Product Owner for legal policy signoff.",Product Owner + Security,Open

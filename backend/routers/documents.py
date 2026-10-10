@@ -196,3 +196,73 @@ async def delete_single_document(doc_id: str):
         "message": f"Document {doc_id} and its ChromaDB embeddings deleted successfully.",
         "remainingDocuments": len(project_store.documents),
     }
+
+@router.get("/documents/{doc_id}/download")
+async def download_document(doc_id: str):
+    doc = project_store.get_document(doc_id)
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found")
+
+    from fastapi.responses import Response
+    safe_filename = doc.name or f"document_{doc_id}.txt"
+    ext = safe_filename.split(".")[-1].lower() if "." in safe_filename else "txt"
+    content = doc.content or f"[Document: {safe_filename}]"
+
+    media_type = "text/plain; charset=utf-8"
+    if ext == "csv":
+        media_type = "text/csv; charset=utf-8"
+    elif ext == "json":
+        media_type = "application/json; charset=utf-8"
+    elif ext == "pdf":
+        media_type = "application/pdf"
+
+    return Response(
+        content=content.encode("utf-8") if isinstance(content, str) else content,
+        media_type=media_type,
+        headers={"Content-Disposition": f'attachment; filename="{safe_filename}"'},
+    )
+
+@router.get("/sample-files/{fmt}")
+async def download_sample_format(fmt: str):
+    from fastapi.responses import Response
+    fmt_clean = fmt.lower().strip()
+    safe_filename = f"sample_project_{fmt_clean}.{fmt_clean}"
+    
+    if fmt_clean == "csv":
+        content = "ID,Title,Status,Owner,Priority\n1,Initial Sample Requirement,Open,Sprint Lead,High\n2,Security Architecture Review,In Progress,Security Team,Critical\n"
+        media_type = "text/csv; charset=utf-8"
+    elif fmt_clean == "json":
+        content = '{\n  "project": "Sample Project",\n  "tasks": [\n    {"id": 1, "title": "Setup pipeline", "status": "Done"}\n  ]\n}'
+        media_type = "application/json; charset=utf-8"
+    else:
+        content = f"Sample Project {fmt_clean.upper()} Document\nID\tTitle\tStatus\n1\tInitial Sample Task\tOpen\n"
+        media_type = "text/plain; charset=utf-8"
+
+    return Response(
+        content=content.encode("utf-8"),
+        media_type=media_type,
+        headers={"Content-Disposition": f'attachment; filename="{safe_filename}"'},
+    )
+
+@router.get("/sample-files/download/{filename}")
+async def download_real_sample_file(filename: str):
+    import os
+    from fastapi.responses import FileResponse, Response
+
+    # Check if file exists in sample files folder
+    candidates = [
+        os.path.join("./backend/storage/files", filename),
+        os.path.join("./backend/chroma_db/files", filename),
+        os.path.join("./backend/storage/chroma_db/files", filename),
+    ]
+    for path in candidates:
+        if os.path.exists(path):
+            return FileResponse(path, filename=filename)
+
+    # Fallback response
+    return Response(
+        content=f"Sample file content for {filename}\n".encode("utf-8"),
+        media_type="text/plain; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+

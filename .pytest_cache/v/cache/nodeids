@@ -1,0 +1,16 @@
+[
+  "backend/tests/test_backend.py::test_ask_assistant_with_rag",
+  "backend/tests/test_backend.py::test_document_deletion",
+  "backend/tests/test_backend.py::test_document_upload_and_indexing",
+  "backend/tests/test_backend.py::test_health_check",
+  "backend/tests/test_backend.py::test_knowledge_base_project_specific_reset",
+  "backend/tests/test_backend.py::test_knowledge_base_reset_confirmed_and_reupload_search",
+  "backend/tests/test_backend.py::test_knowledge_base_reset_failure_handling",
+  "backend/tests/test_backend.py::test_knowledge_base_reset_unconfirmed",
+  "backend/tests/test_backend.py::test_langgraph_pipeline_run",
+  "backend/tests/test_backend.py::test_project_reset",
+  "backend/tests/test_backend.py::test_project_summary_empty",
+  "backend/tests/test_backend.py::test_report_generation",
+  "backend/tests/test_backend.py::test_sample_files_download",
+  "backend/tests/test_backend.py::test_semantic_search"
+]

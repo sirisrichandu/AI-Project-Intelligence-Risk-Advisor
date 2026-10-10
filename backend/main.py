@@ -10,6 +10,7 @@ from backend.routers import (
     health,
     reports,
     assistant,
+    knowledge_base,
 )
 
 app = FastAPI(
@@ -36,6 +37,7 @@ app.include_router(actions.router)
 app.include_router(health.router)
 app.include_router(reports.router)
 app.include_router(assistant.router)
+app.include_router(knowledge_base.router)
 
 @app.get("/api/project/summary")
 async def get_project_summary():

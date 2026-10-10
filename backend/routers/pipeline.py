@@ -2,11 +2,7 @@ from fastapi import APIRouter
 from datetime import datetime
 import time
 from backend.store import project_store
-from backend.agents.scope_agent import extract_project_scope
-from backend.agents.risk_agent import detect_project_risks
-from backend.agents.blocker_action_agent import extract_blockers_and_actions, detect_tasks_at_risk
-from backend.agents.health_engine import compute_health_score
-from backend.agents.doc_gen_agent import build_tabular_doc_output, generate_dossier_markdown
+from backend.agents.langgraph_workflow import run_langgraph_pipeline
 from backend.models import GeneratedReport
 
 router = APIRouter(prefix="/api/pipeline", tags=["pipeline"])
@@ -17,6 +13,7 @@ async def run_pipeline():
         project_store.clear_all()
         return {
             "message": "No documents in knowledge base. Upload your project documents to extract real risks.",
+            "pipelineEngine": "LangGraph StateGraph",
             "scope": project_store.scope.model_dump(),
             "risks": [],
             "blockers": [],
@@ -28,62 +25,42 @@ async def run_pipeline():
         }
 
     combined_content = project_store.get_combined_content()
+    docs_payload = [d.model_dump() for d in project_store.documents]
 
-    # 1. Run Scope Agent
-    project_store.scope = extract_project_scope(combined_content)
+    # Execute LangGraph StateGraph Workflow
+    graph_state = run_langgraph_pipeline(combined_content, docs_payload)
 
-    # 2. Run Risk Agent
-    project_store.risks = detect_project_risks(combined_content)
+    project_store.scope = graph_state["scope"]
+    project_store.risks = graph_state["risks"]
+    project_store.blockers = graph_state["blockers"]
+    project_store.actions = graph_state["actions"]
+    project_store.tasks_at_risk = graph_state["tasks_at_risk"]
+    project_store.health = graph_state["health"]
+    project_store.latest_doc_generation_output = graph_state["documentation_output"]
 
-    # 3. Run Blocker & Action Agent
-    blockers, actions = extract_blockers_and_actions(combined_content)
-    project_store.blockers = blockers
-    project_store.actions = actions
-
-    # 4. Run Task Risk Detection
-    project_store.tasks_at_risk = detect_tasks_at_risk(combined_content, project_store.risks)
-
-    # 5. Run Health Scoring Engine
-    project_store.health = compute_health_score(
-        project_store.risks,
-        project_store.blockers,
-        project_store.actions,
-        project_store.health.history,
-    )
-
-    # 6. Run Documentation Generation Agent
-    project_store.latest_doc_generation_output = build_tabular_doc_output(
-        project_store.scope,
-        project_store.risks,
-        project_store.actions,
-    )
-
-    dossier = generate_dossier_markdown(
-        project_store.scope,
-        project_store.risks,
-        project_store.blockers,
-        project_store.actions,
-        project_store.health,
-    )
+    dossier_content = graph_state.get("dossier_markdown", "")
 
     master_report = GeneratedReport(
         id=f"rep-master-{int(time.time() * 1000)}",
         type="complete_intelligence",
-        title="Project Intelligence & Risk Master Dossier",
+        title="Project Intelligence & Risk Master Dossier (LangGraph)",
         createdAt=datetime.now().isoformat(),
         format="PDF",
-        content=f"{project_store.latest_doc_generation_output}\n\n{dossier['content']}",
+        content=f"{project_store.latest_doc_generation_output}\n\n{dossier_content}",
         metadata={
             "healthScore": project_store.health.overall,
             "riskCount": len(project_store.risks),
             "blockerCount": len(project_store.blockers),
             "documentsAnalyzed": len(project_store.documents),
+            "pipelineEngine": "LangGraph StateGraph",
         },
     )
     project_store.reports.insert(0, master_report)
 
     return {
-        "message": "Automatic Multi-Agent Pipeline completed successfully.",
+        "message": "LangGraph StateGraph multi-agent pipeline completed successfully.",
+        "pipelineEngine": "LangGraph StateGraph",
+        "executionTrace": graph_state.get("execution_trace", []),
         "scope": project_store.scope.model_dump(),
         "risks": [r.model_dump() for r in project_store.risks],
         "blockers": [b.model_dump() for b in project_store.blockers],
@@ -93,3 +70,4 @@ async def run_pipeline():
         "documentationOutput": project_store.latest_doc_generation_output,
         "masterReport": master_report.model_dump(),
     }
+

@@ -1,0 +1,20 @@
+SYSTEM REQUIREMENTS SPECIFICATION (SRS)
+PROJECT: Computer Vision Helmet Detection & Number Plate Recognition System
+VERSION: 2.1 | DATE: 12 October 2026 | AUTHOR: System Architecture Team
+
+1. PURPOSE & VISION
+The Helmet Detection System provides automated traffic camera frame processing, identifying riders operating two-wheeled vehicles without safety helmets. In cases of confirmed non-compliance, vehicle license plates are localized, cropped, and digitized via OCR to construct tamper-evident violation evidence dossiers.
+
+2. SYSTEM SCOPE & FUNCTIONAL MODULES
+2.1 Frame Ingestion: Accepts RTSP/HLS camera streams and batch static image uploads (.jpg, .png, .mp4).
+2.2 Rider & Helmet Detection: Runs YOLOv8 multi-class object detection (classes: rider, helmet, bare-head, motorcycle).
+2.3 Association Heuristics: Implements spatial Intersection-over-Union (IoU) and centroid proximity to associate bare-head bounding boxes with riders and motorcycles.
+2.4 License Plate Localization & OCR: Crops localized number plates, applies adaptive thresholding, de-skewing, and runs OCR character extraction with confidence scoring.
+2.5 Evidence Vault: Stores original source frames, plate crops, OCR text, detection bounding boxes, and metadata into immutable records.
+2.6 Human Review Dispatcher: Dispatches detections with confidence scores below 0.85 to the operator review queue.
+
+3. NON-FUNCTIONAL REQUIREMENTS
+- Performance: Maximum p95 latency under 250ms per frame on edge accelerator.
+- Accuracy: Target helmet detection precision >= 94%, OCR character accuracy >= 90%.
+- Idempotency: Duplicate API calls with matching trace keys must result in zero duplicate records.
+- Governance: 90-day evidence retention lifecycle with role-based cryptographic access control.

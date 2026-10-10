@@ -62,6 +62,23 @@ class ProjectStore:
             self.documents = [d for d in self.documents if d.id != doc_id]
             return len(self.documents) < init_len
 
+    def get_document(self, doc_id: str) -> Optional[ProjectDocument]:
+        with self._lock:
+            for d in self.documents:
+                if d.id == doc_id:
+                    return d
+            return None
+
+    def add_report(self, report: GeneratedReport):
+        with self._lock:
+            self.reports.insert(0, report)
+
+    def delete_report(self, report_id: str) -> bool:
+        with self._lock:
+            init_len = len(self.reports)
+            self.reports = [r for r in self.reports if r.id != report_id]
+            return len(self.reports) < init_len
+
     def get_combined_content(self) -> str:
         with self._lock:
             if not self.documents:

@@ -1,9 +1,18 @@
+/**
+ * @deprecated RETIRED / DEPRECATED:
+ * All active backend functionality has been consolidated into Python FastAPI (backend/main.py).
+ * The Python FastAPI application is the single source of truth for all business logic,
+ * document ingestion, native persistent ChromaDB operations, and LangGraph workflow execution.
+ * This TypeScript file acts solely as a legacy reverse-proxy and fallback dev server forwarding
+ * all `/api/*` traffic to the FastAPI instance at FASTAPI_URL.
+ */
 import express, { Request, Response } from 'express';
 import path from 'path';
 import fs from 'fs';
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import multer from 'multer';
+import { executeLangGraphWorkflow } from './src/server/langgraphWorkflow.js';
 
 dotenv.config();
 
@@ -12,20 +21,16 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const FASTAPI_URL = process.env.FASTAPI_URL ? process.env.FASTAPI_URL.replace(/\/$/, '') : null;
+const FASTAPI_URL = (process.env.FASTAPI_URL || process.env.VITE_API_URL || 'http://127.0.0.1:8001').replace(/\/$/, '');
 const CHROMA_DIR = path.resolve(process.cwd(), 'backend/chroma_db');
 const CHROMA_JSON = path.join(CHROMA_DIR, 'vector_store.json');
-const FILES_DIR = path.join(CHROMA_DIR, 'files');
 
-// Ensure storage directories exist
+// Ensure ChromaDB directory exists
 if (!fs.existsSync(CHROMA_DIR)) {
   fs.mkdirSync(CHROMA_DIR, { recursive: true });
 }
-if (!fs.existsSync(FILES_DIR)) {
-  fs.mkdirSync(FILES_DIR, { recursive: true });
-}
 
-// Multer memory storage for file uploads
+// Multer memory storage for file uploads (files are processed strictly in RAM, not saved to disk)
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 50 * 1024 * 1024 },
@@ -240,14 +245,23 @@ function chunkDocumentText(text: string, docId: string, docName: string, categor
     rawSections.push(cleaned.slice(0, 1000));
   }
 
-  // Convert semantic blocks into chunk records
+  // Convert semantic blocks into chunk records with structural metadata
   rawSections.forEach((sec, idx) => {
+    const firstLine = sec.split('\n')[0].trim().replace(/^[#*•\s-]+/, '');
+    const isTable = sec.includes('|') || (sec.includes(',') && sec.split('\n').length > 2);
+    const isHeader = /^#+\s+|^[0-9]+\.\s+/.test(sec);
+    const sectionType = isTable ? 'tabular_data' : isHeader ? 'structural_heading' : 'semantic_narrative';
+
     chunks.push({
       id: `${docId}_chunk_${idx + 1}`,
       document_id: docId,
       document_name: docName,
       category,
+      section_title: firstLine.slice(0, 80) || `Section ${idx + 1}`,
+      semantic_type: sectionType,
       page: Math.max(1, Math.round((idx * 600) / 1800) + 1),
+      chars: sec.length,
+      tokens: Math.ceil(sec.length / 4),
       text: sec,
       created_at: now,
     });
@@ -1131,6 +1145,60 @@ app.get('/api/documents/:id/chunks', async (req: Request, res: Response) => {
   res.json({ chunks, totalChunks: chunks.length });
 });
 
+// POST /api/knowledge-base/search & /api/search (Semantic & keyword retrieval)
+const searchKnowledgeBaseHandler = async (req: Request, res: Response) => {
+  if (await forwardToFastApi(req, res, '/api/knowledge-base/search')) return;
+
+  const query = (req.body.query || req.body.q || '').trim().toLowerCase();
+  const topK = Math.max(1, Math.min(50, parseInt(req.body.topK || req.body.limit || '10', 10)));
+  const categoryFilter = req.body.category;
+
+  const store = readChromaStore();
+  if (!query) {
+    return res.json({
+      query: '',
+      totalMatches: store.chunks.length,
+      results: store.chunks.slice(0, topK),
+    });
+  }
+
+  const queryTokens = query.split(/\s+/).filter((t: string) => t.length > 1);
+
+  // Score chunks by token presence, frequency, and exact phrase matching
+  const scored = store.chunks
+    .filter((c: any) => !categoryFilter || c.category === categoryFilter)
+    .map((c: any) => {
+      const text = (c.text || '').toLowerCase();
+      const title = (c.section_title || c.document_name || '').toLowerCase();
+      let score = 0;
+
+      // Exact phrase match bonus
+      if (text.includes(query)) score += 50;
+      if (title.includes(query)) score += 30;
+
+      // Individual token matches
+      for (const token of queryTokens) {
+        if (text.includes(token)) score += 10;
+        if (title.includes(token)) score += 15;
+      }
+
+      return {
+        ...c,
+        similarity_score: Math.min(0.99, Math.round((score / (queryTokens.length * 25 + 50)) * 100) / 100),
+      };
+    })
+    .filter((c: any) => c.similarity_score > 0)
+    .sort((a: any, b: any) => b.similarity_score - a.similarity_score);
+
+  res.json({
+    query,
+    totalMatches: scored.length,
+    results: scored.slice(0, topK),
+  });
+};
+app.post('/api/knowledge-base/search', searchKnowledgeBaseHandler);
+app.post('/api/search', searchKnowledgeBaseHandler);
+
 // GET /api/documents/:id/download
 app.get('/api/documents/:id/download', async (req: Request, res: Response) => {
   const store = readChromaStore();
@@ -1141,14 +1209,7 @@ app.get('/api/documents/:id/download', async (req: Request, res: Response) => {
 
   const safeFilename = doc.name || 'document.txt';
   const ext = safeFilename.split('.').pop()?.toLowerCase() || 'txt';
-  const diskPath = path.join(FILES_DIR, `${doc.id}_${safeFilename}`);
-
-  // If saved on disk, stream directly
-  if (fs.existsSync(diskPath)) {
-    return res.download(diskPath, safeFilename);
-  }
-
-  // Otherwise synthesize content matching format
+  // Synthesize content matching format directly in-memory (no files stored on disk)
   const content = doc.content || `[Document: ${safeFilename}]`;
 
   if (ext === 'pdf') {
@@ -1211,18 +1272,9 @@ app.post('/api/upload-json', async (req: Request, res: Response) => {
     if (f.base64) {
       const base64Data = f.base64.replace(/^data:[^;]+;base64,/, '');
       fileBuffer = Buffer.from(base64Data, 'base64');
-      // Save file to disk
-      try {
-        fs.writeFileSync(path.join(FILES_DIR, `${docId}_${f.name}`), fileBuffer);
-      } catch (saveErr) {
-        console.warn('Failed to save file to disk:', saveErr);
-      }
       text = await extractTextFromBuffer(f.name, fileBuffer);
     } else if (f.content) {
       text = f.content;
-      try {
-        fs.writeFileSync(path.join(FILES_DIR, `${docId}_${f.name}`), Buffer.from(text, 'utf-8'));
-      } catch {}
     } else {
       text = `[Document: ${f.name}]\nProcessed and indexed for project analysis.`;
     }
@@ -1276,13 +1328,7 @@ app.post('/api/upload', upload.array('files') as any, async (req: Request, res: 
     const docId = `doc-${Date.now()}-${idx}`;
     const ext = file.originalname.includes('.') ? file.originalname.split('.').pop()?.toUpperCase() : 'TXT';
 
-    // Save file to disk
-    try {
-      fs.writeFileSync(path.join(FILES_DIR, `${docId}_${file.originalname}`), file.buffer);
-    } catch (saveErr) {
-      console.warn('Failed to save file to disk:', saveErr);
-    }
-
+    // In-memory text extraction from buffer (no files stored on disk)
     const text = await extractTextFromBuffer(file.originalname, file.buffer);
     const chunks = chunkDocumentText(text, docId, file.originalname, 'general');
     newChunks.push(...chunks);
@@ -1326,20 +1372,6 @@ app.delete('/api/documents/:id', async (req: Request, res: Response) => {
   const updatedChunks = store.chunks.filter((c: any) => c.document_id !== docId);
   writeChromaStore(updatedDocs, updatedChunks);
 
-  // Delete file from disk if present
-  try {
-    if (fs.existsSync(FILES_DIR)) {
-      const diskFiles = fs.readdirSync(FILES_DIR);
-      for (const f of diskFiles) {
-        if (f.startsWith(`${docId}_`)) {
-          fs.unlinkSync(path.join(FILES_DIR, f));
-        }
-      }
-    }
-  } catch (err) {
-    console.warn(`Could not delete file for ${docId} from disk:`, err);
-  }
-
   if (updatedDocs.length === 0) {
     projectScope = { ...EMPTY_SCOPE };
     projectRisks = [];
@@ -1366,18 +1398,6 @@ const clearAllHandler = async (req: Request, res: Response) => {
   projectTasksAtRisk = [];
   latestDocOutput = '';
 
-  // Delete all files from disk
-  try {
-    if (fs.existsSync(FILES_DIR)) {
-      const diskFiles = fs.readdirSync(FILES_DIR);
-      for (const f of diskFiles) {
-        fs.unlinkSync(path.join(FILES_DIR, f));
-      }
-    }
-  } catch (err) {
-    console.warn('Could not clean FILES_DIR:', err);
-  }
-
   res.json({ message: 'All documents and ChromaDB vector embeddings cleared.', remainingDocuments: 0 });
 };
 app.post('/api/documents/clear-all', clearAllHandler);
@@ -1397,6 +1417,7 @@ app.post('/api/pipeline/run', async (req: Request, res: Response) => {
     latestDocOutput = '';
     return res.json({
       message: 'No documents in knowledge base. Upload your project documents to run multi-agent analysis.',
+      pipelineEngine: 'LangGraph StateGraph (Compiled)',
       scope: projectScope,
       risks: [],
       blockers: [],
@@ -1407,20 +1428,47 @@ app.post('/api/pipeline/run', async (req: Request, res: Response) => {
     });
   }
 
-  // Force parse intelligence on all uploaded artifacts
-  ensureIntelligenceParsed(true);
+  try {
+    const combinedText = store.documents.map((d: any) => d.content || '').join('\n\n');
+    const langgraphResult = await executeLangGraphWorkflow(store.documents, combinedText);
 
-  res.json({
-    message: 'Multi-agent pipeline completed successfully. Intelligence updated in ChromaDB store.',
-    scope: projectScope,
-    risks: projectRisks,
-    blockers: projectBlockers,
-    actions: projectActions,
-    tasksAtRisk: projectTasksAtRisk,
-    health: computeHealth(),
-    documentationOutput: latestDocOutput,
-  });
+    projectScope = langgraphResult.scope;
+    projectRisks = langgraphResult.risks;
+    projectBlockers = langgraphResult.blockers;
+    projectActions = langgraphResult.actions;
+    projectTasksAtRisk = langgraphResult.tasksAtRisk;
+    latestDocOutput = langgraphResult.documentationOutput;
+
+    res.json({
+      message: 'LangGraph StateGraph multi-agent pipeline completed successfully.',
+      pipelineEngine: 'LangGraph StateGraph (Compiled)',
+      executionTrace: langgraphResult.executionTrace,
+      scope: projectScope,
+      risks: projectRisks,
+      blockers: projectBlockers,
+      actions: projectActions,
+      tasksAtRisk: projectTasksAtRisk,
+      health: langgraphResult.health,
+      documentationOutput: latestDocOutput,
+      deepMitigations: langgraphResult.deepMitigations,
+    });
+  } catch (err: any) {
+    console.error('Error executing LangGraph pipeline:', err);
+    ensureIntelligenceParsed(true);
+    res.json({
+      message: 'Pipeline executed with deterministic fallback state.',
+      pipelineEngine: 'LangGraph StateGraph',
+      scope: projectScope,
+      risks: projectRisks,
+      blockers: projectBlockers,
+      actions: projectActions,
+      tasksAtRisk: projectTasksAtRisk,
+      health: computeHealth(),
+      documentationOutput: latestDocOutput,
+    });
+  }
 });
+
 
 // GET /api/scope
 app.get('/api/scope', async (req: Request, res: Response) => {
@@ -1611,14 +1659,6 @@ app.post('/api/project/reset', (req: Request, res: Response) => {
   projectActions = [];
   projectTasksAtRisk = [];
   latestDocOutput = '';
-  try {
-    if (fs.existsSync(FILES_DIR)) {
-      const diskFiles = fs.readdirSync(FILES_DIR);
-      for (const f of diskFiles) {
-        fs.unlinkSync(path.join(FILES_DIR, f));
-      }
-    }
-  } catch {}
   res.json({ message: 'Project workspace reset to clean initial state.', health: computeHealth() });
 });
 

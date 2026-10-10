@@ -4,15 +4,20 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "tsx server.ts",
+    "dev": "node start-dev.js",
+    "dev:frontend": "vite --port 3000 --host 0.0.0.0",
+    "dev:backend": "python3 -m uvicorn backend.main:app --host 0.0.0.0 --port 8001 --reload",
     "build": "vite build",
     "preview": "vite preview",
+    "test": "pytest backend/tests/test_backend.py -v",
     "clean": "rm -rf dist server.js",
     "lint": "tsc --noEmit",
-    "start": "tsx server.ts"
+    "start": "node start-dev.js"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",
+    "@langchain/core": "^1.2.17",
+    "@langchain/langgraph": "^1.4.21",
     "@tailwindcss/vite": "^4.3.3",
     "@types/multer": "^2.3.0",
     "@vitejs/plugin-react": "^6.1.1",

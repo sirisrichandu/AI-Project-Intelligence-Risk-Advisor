@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ProjectDocument } from '../../types';
 import { downloadSinglePDF } from '../../utils/pdfDownloader';
 import {
@@ -17,6 +17,7 @@ import {
   Calendar,
   HardDrive,
   FileCheck,
+  Tag,
 } from 'lucide-react';
 
 interface DocumentViewerModalProps {
@@ -35,6 +36,28 @@ export const DocumentViewerModal: React.FC<DocumentViewerModalProps> = ({
   const [activeTab, setActiveTab] = useState<'content' | 'chunks'>('content');
   const [copied, setCopied] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [fetchedChunks, setFetchedChunks] = useState<any[]>([]);
+  const [loadingChunks, setLoadingChunks] = useState(false);
+
+  useEffect(() => {
+    if (isOpen && doc?.id) {
+      setLoadingChunks(true);
+      fetch(`/api/documents/${doc.id}/chunks`)
+        .then((r) => r.json())
+        .then((data) => {
+          if (Array.isArray(data.chunks) && data.chunks.length > 0) {
+            setFetchedChunks(data.chunks);
+          } else {
+            setFetchedChunks([]);
+          }
+        })
+        .catch((err) => {
+          console.warn('Error fetching document chunks:', err);
+          setFetchedChunks([]);
+        })
+        .finally(() => setLoadingChunks(false));
+    }
+  }, [isOpen, doc?.id]);
 
   if (!isOpen || !doc) return null;
 
@@ -68,18 +91,31 @@ export const DocumentViewerModal: React.FC<DocumentViewerModalProps> = ({
     }
   };
 
-  // Synthesize chunks if not provided directly
-  const chunks = Array.from({ length: doc.chunkCount || 1 }).map((_, idx) => {
-    const start = idx * 600;
-    const end = Math.min(start + 600, contentText.length);
-    const chunkSnippet = contentText.slice(start, end).trim();
-    return {
-      index: idx + 1,
-      id: `${doc.id}_chunk_${idx + 1}`,
-      length: chunkSnippet.length,
-      snippet: chunkSnippet || `Vector embedding chunk ${idx + 1} for ${doc.name}`,
-    };
-  });
+  // Fallback to local synthesized chunks if backend chunks not yet fetched
+  const displayChunks = fetchedChunks.length > 0
+    ? fetchedChunks.map((c, idx) => ({
+        index: idx + 1,
+        id: c.id,
+        section_title: c.section_title || `Section ${idx + 1}`,
+        semantic_type: c.semantic_type || 'narrative',
+        length: (c.text || '').length,
+        tokens: c.tokens || Math.ceil((c.text || '').length / 4),
+        snippet: c.text || '',
+      }))
+    : Array.from({ length: doc.chunkCount || 1 }).map((_, idx) => {
+        const start = idx * 600;
+        const end = Math.min(start + 600, contentText.length);
+        const chunkSnippet = contentText.slice(start, end).trim();
+        return {
+          index: idx + 1,
+          id: `${doc.id}_chunk_${idx + 1}`,
+          section_title: `Semantic Block #${idx + 1}`,
+          semantic_type: 'structural_block',
+          length: chunkSnippet.length,
+          tokens: Math.ceil(chunkSnippet.length / 4),
+          snippet: chunkSnippet || `Vector embedding chunk ${idx + 1} for ${doc.name}`,
+        };
+      });
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/75 backdrop-blur-sm animate-in fade-in duration-200">
@@ -174,7 +210,7 @@ export const DocumentViewerModal: React.FC<DocumentViewerModalProps> = ({
             >
               <Layers className="w-3.5 h-3.5" />
               <span>Vector Chunks</span>
-              <span className="text-[10px] opacity-75 font-mono">({chunks.length})</span>
+              <span className="text-[10px] opacity-75 font-mono">({displayChunks.length})</span>
             </button>
           </div>
 
@@ -225,27 +261,46 @@ export const DocumentViewerModal: React.FC<DocumentViewerModalProps> = ({
             </div>
           ) : (
             <div className="space-y-4 font-sans">
-              <div className="p-3 rounded-lg bg-slate-900 border border-slate-800 text-xs text-slate-400 flex items-center gap-2">
-                <Database className="w-4 h-4 text-teal-400 shrink-0" />
-                <span>
-                  Semantic chunks stored in ChromaDB vector repository with 384-dimensional dense embeddings for cosine similarity retrieval.
-                </span>
+              <div className="p-3 rounded-lg bg-slate-900 border border-slate-800 text-xs text-slate-400 flex items-center justify-between gap-2 flex-wrap">
+                <div className="flex items-center gap-2">
+                  <Database className="w-4 h-4 text-teal-400 shrink-0" />
+                  <span>
+                    Semantic structural chunks indexed in ChromaDB vector repository ({displayChunks.length} chunks).
+                  </span>
+                </div>
+                {loadingChunks && (
+                  <span className="text-[11px] text-teal-400 animate-pulse font-mono">Syncing vector store...</span>
+                )}
               </div>
               <div className="grid grid-cols-1 gap-3">
-                {chunks.map((chk) => (
+                {displayChunks.map((chk) => (
                   <div
                     key={chk.id}
                     className="p-4 rounded-xl bg-slate-900/80 border border-slate-800 hover:border-slate-700 transition-colors"
                   >
-                    <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
                       <div className="flex items-center gap-2 font-mono text-xs">
                         <span className="px-2 py-0.5 rounded bg-teal-500/10 border border-teal-500/30 text-teal-400 font-bold">
                           Chunk #{chk.index}
                         </span>
-                        <span className="text-slate-500">{chk.id}</span>
+                        <span className="text-slate-500 text-[11px]">{chk.id}</span>
+                        {chk.semantic_type && (
+                          <span className="px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 text-[10px] uppercase border border-slate-700">
+                            {chk.semantic_type.replace('_', ' ')}
+                          </span>
+                        )}
                       </div>
-                      <span className="text-slate-400 text-xs font-mono">{chk.length} chars</span>
+                      <div className="flex items-center gap-3 text-slate-400 text-xs font-mono">
+                        <span>~{chk.tokens} tokens</span>
+                        <span>{chk.length} chars</span>
+                      </div>
                     </div>
+                    {chk.section_title && (
+                      <div className="mb-2 text-xs font-semibold text-slate-200 flex items-center gap-1.5 font-sans">
+                        <Tag className="w-3.5 h-3.5 text-teal-400 shrink-0" />
+                        <span className="truncate">{chk.section_title}</span>
+                      </div>
+                    )}
                     <p className="text-xs text-slate-300 whitespace-pre-wrap font-mono leading-relaxed bg-slate-950/60 p-3 rounded-lg border border-slate-800/80">
                       {chk.snippet}
                     </p>
