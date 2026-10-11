@@ -9,6 +9,49 @@ logger = logging.getLogger("chromadb_service")
 
 CHROMA_PERSIST_DIR = os.getenv("CHROMA_PERSIST_DIR", "./backend/storage/chroma_db")
 
+class IndexingResult(dict):
+    """Result object containing indexing metrics and storage status, compatible with int."""
+    def __init__(self, count: int, storage_mode: str, native_chroma_success: bool, error: Optional[str] = None):
+        super().__init__(
+            count=count,
+            storage_mode=storage_mode,
+            native_chroma_success=native_chroma_success,
+            error=error,
+        )
+        self.count = count
+        self.storage_mode = storage_mode
+        self.native_chroma_success = native_chroma_success
+        self.error = error
+
+    def __int__(self):
+        return self.count
+
+    def __index__(self):
+        return self.count
+
+    def __add__(self, other):
+        return self.count + int(other)
+
+    def __radd__(self, other):
+        return int(other) + self.count
+
+    def __eq__(self, other):
+        if isinstance(other, int):
+            return self.count == other
+        return super().__eq__(other)
+
+    def __ge__(self, other):
+        return self.count >= int(other)
+
+    def __gt__(self, other):
+        return self.count > int(other)
+
+    def __le__(self, other):
+        return self.count <= int(other)
+
+    def __lt__(self, other):
+        return self.count < int(other)
+
 class ChromaService:
     """
     Native ChromaDB Persistent Vector Store Service for Project Intelligence RAG.
@@ -105,49 +148,6 @@ class ChromaService:
         except Exception as e:
             logger.error(f"Error writing vector_store.json: {e}")
 
-class IndexingResult(dict):
-    """Result object containing indexing metrics and storage status, compatible with int."""
-    def __init__(self, count: int, storage_mode: str, native_chroma_success: bool, error: Optional[str] = None):
-        super().__init__(
-            count=count,
-            storage_mode=storage_mode,
-            native_chroma_success=native_chroma_success,
-            error=error,
-        )
-        self.count = count
-        self.storage_mode = storage_mode
-        self.native_chroma_success = native_chroma_success
-        self.error = error
-
-    def __int__(self):
-        return self.count
-
-    def __index__(self):
-        return self.count
-
-    def __add__(self, other):
-        return self.count + int(other)
-
-    def __radd__(self, other):
-        return int(other) + self.count
-
-    def __eq__(self, other):
-        if isinstance(other, int):
-            return self.count == other
-        return super().__eq__(other)
-
-    def __ge__(self, other):
-        return self.count >= int(other)
-
-    def __gt__(self, other):
-        return self.count > int(other)
-
-    def __le__(self, other):
-        return self.count <= int(other)
-
-    def __lt__(self, other):
-        return self.count < int(other)
-
     def add_document_chunks(
         self,
         document_id: str,
@@ -220,12 +220,21 @@ class IndexingResult(dict):
             })
 
         # 3. Update human-readable vector_store.json
+        json_error = None
         try:
             existing_chunks = [ch for ch in self._read_json_store() if ch.get("document_id") != document_id]
             existing_chunks.extend(chunk_records)
             self._write_json_store(existing_chunks)
         except Exception as e:
+            json_error = str(e)
             logger.error(f"Error persisting vector_store.json: {e}")
+
+        # If neither native ChromaDB nor persistent JSON store succeeded, raise RuntimeError
+        if not native_chroma_success and json_error:
+            raise RuntimeError(
+                f"Vector indexing failed for '{document_name}'. "
+                f"Native ChromaDB error: {chroma_error}; JSON store error: {json_error}"
+            )
 
         return IndexingResult(
             count=len(chunks),

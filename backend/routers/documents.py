@@ -136,13 +136,28 @@ async def upload_json_documents(req: UploadJsonRequest):
             )
 
         # 3. Store chunks into ChromaDB / persistent vector store
-        indexing_res = chroma_service.add_document_chunks(
-            document_id=doc_id,
-            document_name=file_item.name,
-            chunks=chunks,
-        )
+        try:
+            indexing_res = chroma_service.add_document_chunks(
+                document_id=doc_id,
+                document_name=file_item.name,
+                chunks=chunks,
+            )
+        except Exception as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to index document chunks for '{file_item.name}': {str(e)}"
+            )
+
         indexed_count = int(indexing_res)
+        if indexed_count <= 0 and chunks:
+            err_detail = getattr(indexing_res, "error", None) or "Zero vector chunks indexed."
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to index document chunks for '{file_item.name}': {err_detail}"
+            )
+
         total_indexed_chunks += indexed_count
+        last_indexing_res = indexing_res
 
         doc = ProjectDocument(
             id=doc_id,
@@ -160,8 +175,8 @@ async def upload_json_documents(req: UploadJsonRequest):
     project_store.add_documents(uploaded_docs)
     auto_extract_project_intelligence()
 
-    storage_mode = getattr(indexing_res, "storage_mode", "native_chromadb" if chroma_service.is_chroma_available else "json_fallback")
-    native_chroma_success = getattr(indexing_res, "native_chroma_success", chroma_service.is_chroma_available)
+    storage_mode = getattr(last_indexing_res, "storage_mode", "native_chromadb" if chroma_service.is_chroma_available else "json_fallback")
+    native_chroma_success = getattr(last_indexing_res, "native_chroma_success", chroma_service.is_chroma_available)
 
     if native_chroma_success:
         summary_msg = f"{len(uploaded_docs)} document(s) uploaded and indexed into native ChromaDB ({total_indexed_chunks} vector chunks)."
@@ -231,13 +246,28 @@ async def upload_multipart_files(files: List[UploadFile] = File(...)):
             )
 
         # Index to ChromaDB / persistent vector store
-        indexing_res = chroma_service.add_document_chunks(
-            document_id=doc_id,
-            document_name=file_obj.filename,
-            chunks=chunks,
-        )
+        try:
+            indexing_res = chroma_service.add_document_chunks(
+                document_id=doc_id,
+                document_name=file_obj.filename,
+                chunks=chunks,
+            )
+        except Exception as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to index document chunks for '{file_obj.filename}': {str(e)}"
+            )
+
         indexed_count = int(indexing_res)
+        if indexed_count <= 0 and chunks:
+            err_detail = getattr(indexing_res, "error", None) or "Zero vector chunks indexed."
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to index document chunks for '{file_obj.filename}': {err_detail}"
+            )
+
         total_indexed_chunks += indexed_count
+        last_indexing_res = indexing_res
 
         size_kb = max(1, round(len(file_bytes) / 1024))
 
@@ -257,8 +287,8 @@ async def upload_multipart_files(files: List[UploadFile] = File(...)):
     project_store.add_documents(uploaded_docs)
     auto_extract_project_intelligence()
 
-    storage_mode = getattr(indexing_res, "storage_mode", "native_chromadb" if chroma_service.is_chroma_available else "json_fallback")
-    native_chroma_success = getattr(indexing_res, "native_chroma_success", chroma_service.is_chroma_available)
+    storage_mode = getattr(last_indexing_res, "storage_mode", "native_chromadb" if chroma_service.is_chroma_available else "json_fallback")
+    native_chroma_success = getattr(last_indexing_res, "native_chroma_success", chroma_service.is_chroma_available)
 
     if native_chroma_success:
         summary_msg = f"{len(uploaded_docs)} document(s) uploaded and indexed into native ChromaDB ({total_indexed_chunks} chunks)."
