@@ -2,17 +2,17 @@
   "collection": "project_knowledge_base",
   "storage_engine": "ChromaDB Persistent Store",
   "persist_directory": "./backend/storage/chroma_db",
-  "total_chunks": 3,
+  "total_chunks": 103,
   "total_documents": 3,
-  "last_updated": "2026-10-11T13:25:24.399736Z",
+  "last_updated": "2026-10-11T13:53:46.248943Z",
   "documents": [
     {
-      "id": "doc_alpha",
-      "name": "Alpha_Spec.txt",
-      "type": "TXT",
+      "id": "doc-1791726396207-0",
+      "name": "Demo_Drone_Surveillance.md",
+      "type": "MD",
       "size": "1 KB",
-      "category": "general",
-      "chunkCount": 1,
+      "category": "requirements",
+      "chunkCount": 101,
       "uploadDate": "2026-10-11",
       "status": "COMPLETED"
     },
@@ -39,14 +39,1014 @@
   ],
   "chunks": [
     {
-      "id": "doc_alpha_chunk_0",
-      "document_id": "doc_alpha",
-      "project_id": "proj_alpha",
-      "document_name": "Alpha_Spec.txt",
-      "category": "general",
+      "id": "doc-1791726396207-0_chunk_0",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
       "page": 1,
-      "text": "Project Alpha sensitive blueprint specifications.",
-      "created_at": "2026-10-11T13:25:24.365161Z"
+      "text": "New Demonstration Artifact: High-resolution thermal drone camera integration. Requirement: Real-time worker thermal signature detection. Risk: High temperature overheating in direct desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_1",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "ement: Real-time worker thermal signature detection. Risk: High temperature overheating in direct desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_2",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "ment: Real-time worker thermal signature detection. Risk: High temperature overheating in direct desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_3",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "ent: Real-time worker thermal signature detection. Risk: High temperature overheating in direct desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_4",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "nt: Real-time worker thermal signature detection. Risk: High temperature overheating in direct desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_5",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "t: Real-time worker thermal signature detection. Risk: High temperature overheating in direct desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_6",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": ": Real-time worker thermal signature detection. Risk: High temperature overheating in direct desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_7",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "Real-time worker thermal signature detection. Risk: High temperature overheating in direct desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_8",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "Real-time worker thermal signature detection. Risk: High temperature overheating in direct desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_9",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "eal-time worker thermal signature detection. Risk: High temperature overheating in direct desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_10",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "al-time worker thermal signature detection. Risk: High temperature overheating in direct desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_11",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "l-time worker thermal signature detection. Risk: High temperature overheating in direct desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_12",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "-time worker thermal signature detection. Risk: High temperature overheating in direct desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_13",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "time worker thermal signature detection. Risk: High temperature overheating in direct desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_14",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "ime worker thermal signature detection. Risk: High temperature overheating in direct desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_15",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "me worker thermal signature detection. Risk: High temperature overheating in direct desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_16",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "e worker thermal signature detection. Risk: High temperature overheating in direct desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_17",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "worker thermal signature detection. Risk: High temperature overheating in direct desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_18",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "worker thermal signature detection. Risk: High temperature overheating in direct desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_19",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "orker thermal signature detection. Risk: High temperature overheating in direct desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_20",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "rker thermal signature detection. Risk: High temperature overheating in direct desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_21",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "ker thermal signature detection. Risk: High temperature overheating in direct desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_22",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "er thermal signature detection. Risk: High temperature overheating in direct desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_23",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "r thermal signature detection. Risk: High temperature overheating in direct desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_24",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "thermal signature detection. Risk: High temperature overheating in direct desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_25",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "thermal signature detection. Risk: High temperature overheating in direct desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_26",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "hermal signature detection. Risk: High temperature overheating in direct desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_27",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "ermal signature detection. Risk: High temperature overheating in direct desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_28",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "rmal signature detection. Risk: High temperature overheating in direct desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_29",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "mal signature detection. Risk: High temperature overheating in direct desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_30",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "al signature detection. Risk: High temperature overheating in direct desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_31",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "l signature detection. Risk: High temperature overheating in direct desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_32",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "signature detection. Risk: High temperature overheating in direct desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_33",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "signature detection. Risk: High temperature overheating in direct desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_34",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "ignature detection. Risk: High temperature overheating in direct desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_35",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "gnature detection. Risk: High temperature overheating in direct desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_36",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "nature detection. Risk: High temperature overheating in direct desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_37",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "ature detection. Risk: High temperature overheating in direct desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_38",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "ture detection. Risk: High temperature overheating in direct desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_39",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "ure detection. Risk: High temperature overheating in direct desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_40",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "re detection. Risk: High temperature overheating in direct desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_41",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "e detection. Risk: High temperature overheating in direct desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_42",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "detection. Risk: High temperature overheating in direct desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_43",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "detection. Risk: High temperature overheating in direct desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_44",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "etection. Risk: High temperature overheating in direct desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_45",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "tection. Risk: High temperature overheating in direct desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_46",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "ection. Risk: High temperature overheating in direct desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_47",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "ction. Risk: High temperature overheating in direct desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_48",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "tion. Risk: High temperature overheating in direct desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_49",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "ion. Risk: High temperature overheating in direct desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_50",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "on. Risk: High temperature overheating in direct desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_51",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "n. Risk: High temperature overheating in direct desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_52",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": ". Risk: High temperature overheating in direct desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_53",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "Risk: High temperature overheating in direct desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_54",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "Risk: High temperature overheating in direct desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_55",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "isk: High temperature overheating in direct desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_56",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "sk: High temperature overheating in direct desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_57",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "k: High temperature overheating in direct desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_58",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": ": High temperature overheating in direct desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_59",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "High temperature overheating in direct desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_60",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "High temperature overheating in direct desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_61",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "igh temperature overheating in direct desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_62",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "gh temperature overheating in direct desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_63",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "h temperature overheating in direct desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_64",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "temperature overheating in direct desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_65",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "temperature overheating in direct desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_66",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "emperature overheating in direct desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_67",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "mperature overheating in direct desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_68",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "perature overheating in direct desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_69",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "erature overheating in direct desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_70",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "rature overheating in direct desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_71",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "ature overheating in direct desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_72",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "ture overheating in direct desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_73",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "ure overheating in direct desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_74",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "re overheating in direct desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_75",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "e overheating in direct desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_76",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "overheating in direct desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_77",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "overheating in direct desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_78",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "verheating in direct desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_79",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "erheating in direct desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_80",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "rheating in direct desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_81",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "heating in direct desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_82",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "eating in direct desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_83",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "ating in direct desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_84",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "ting in direct desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_85",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "ing in direct desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_86",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "ng in direct desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_87",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "g in direct desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_88",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "in direct desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_89",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "in direct desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_90",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "n direct desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_91",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "direct desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_92",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "direct desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_93",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "irect desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_94",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "rect desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_95",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "ect desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_96",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "ct desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_97",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "t desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_98",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_99",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "desert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
+    },
+    {
+      "id": "doc-1791726396207-0_chunk_100",
+      "document_id": "doc-1791726396207-0",
+      "project_id": "default_project",
+      "document_name": "Demo_Drone_Surveillance.md",
+      "category": "requirements",
+      "page": 1,
+      "text": "esert sun operations.",
+      "created_at": "2026-10-11T13:46:36.208129Z"
     },
     {
       "id": "doc_beta_chunk_0",
@@ -56,7 +1056,7 @@
       "category": "general",
       "page": 1,
       "text": "Project Beta critical roadmap milestones.",
-      "created_at": "2026-10-11T13:25:24.365557Z"
+      "created_at": "2026-10-11T13:46:44.367715Z"
     },
     {
       "id": "doc_fail_test_chunk_0",
@@ -66,7 +1066,7 @@
       "category": "general",
       "page": 1,
       "text": "Sample text chunk",
-      "created_at": "2026-10-11T13:25:24.399574Z"
+      "created_at": "2026-10-11T13:46:45.126648Z"
     }
   ]
 }

@@ -1,6 +1,3 @@
 {
-  "backend/tests/test_backend.py::test_knowledge_base_reset_confirmed_and_reupload_search": true,
-  "backend/tests/test_backend.py::test_knowledge_base_project_specific_reset": true,
-  "backend/tests/test_backend.py::test_knowledge_base_reset_failure_handling": true,
-  "backend/tests/test_backend.py::test_missing_bytes_and_content_rejected_422": true
+  "backend/tests/test_backend.py::TestClient": true
 }
