@@ -153,11 +153,12 @@ export const Documents: React.FC<DocumentsProps> = ({
           const filtered = prev.filter((d) => !newIds.has(d.id));
           return [...res.uploadedDocuments, ...filtered];
         });
-        setLocalChunks(res.totalKnowledgeChunks);
+        const chunkCount = res.totalKnowledgeChunks || (res as any).totalChromaChunks || (res as any).totalChunks || 0;
+        setLocalChunks(chunkCount);
 
         setActionNotification({
           type: 'success',
-          message: `Successfully ingested all ${res.uploadedDocuments.length} document(s) (${res.totalKnowledgeChunks} vector chunks). Click "Run AI Multi-Agent Pipeline" below to analyze your project!`,
+          message: `Successfully ingested all ${res.uploadedDocuments.length} document(s) (${chunkCount} vector chunks). Click "Run AI Multi-Agent Pipeline" below to analyze your project!`,
         });
       } else {
         setActionNotification({

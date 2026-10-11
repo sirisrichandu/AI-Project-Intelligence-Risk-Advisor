@@ -20,17 +20,52 @@ interface ProjectIntelligenceProps {
   onNavigate?: (page: string) => void;
 }
 
+const renderString = (val: any): string => {
+  if (val === null || val === undefined) return '';
+  if (typeof val === 'string') return val;
+  if (typeof val === 'number' || typeof val === 'boolean') return String(val);
+  if (typeof val === 'object') {
+    return val.item || val.name || val.title || val.description || val.text || '';
+  }
+  return String(val);
+};
+
 export const ProjectIntelligence: React.FC<ProjectIntelligenceProps> = ({
   scope,
   hasDocuments = true,
   onNavigate,
 }) => {
+  const safeObjectives = Array.isArray(scope?.objectives) ? scope.objectives.map(renderString).filter(Boolean) : [];
+  const safeDeliverables = Array.isArray(scope?.deliverables) ? scope.deliverables.map(renderString).filter(Boolean) : [];
+  const safeRequirements = Array.isArray(scope?.requirements) ? scope.requirements.map(renderString).filter(Boolean) : [];
+  const safeMilestones = Array.isArray(scope?.milestones)
+    ? scope.milestones.map((m: any) =>
+        typeof m === 'string'
+          ? { name: m, targetDate: 'Upcoming', status: 'Upcoming' as const }
+          : {
+              name: renderString(m?.name) || 'Milestone Target',
+              targetDate: renderString(m?.targetDate) || 'Upcoming',
+              status: (renderString(m?.status) || 'Upcoming') as 'Completed' | 'In Progress' | 'Upcoming',
+            }
+      )
+    : [];
+  const safeDeadlines = Array.isArray(scope?.deadlines)
+    ? scope.deadlines.map((dl: any) =>
+        typeof dl === 'string'
+          ? { item: dl, date: 'Upcoming', criticality: 'Medium' as const }
+          : {
+              item: renderString(dl?.item) || 'Deliverable Target',
+              date: renderString(dl?.date) || 'Upcoming',
+              criticality: (renderString(dl?.criticality) || 'Medium') as 'High' | 'Medium' | 'Low',
+            }
+      )
+    : [];
+  const safeConstraints = Array.isArray(scope?.constraints) ? scope.constraints.map(renderString).filter(Boolean) : [];
+
   const isEmpty =
     !hasDocuments ||
     !scope ||
-    ((!scope.milestones || scope.milestones.length === 0) &&
-      (!scope.objectives || scope.objectives.length === 0) &&
-      (!scope.deliverables || scope.deliverables.length === 0));
+    (safeMilestones.length === 0 && safeObjectives.length === 0 && safeDeliverables.length === 0);
 
   return (
     <div className="space-y-6">
@@ -114,11 +149,11 @@ export const ProjectIntelligence: React.FC<ProjectIntelligenceProps> = ({
               <h3 className="text-sm font-semibold text-slate-100">Executive Scope Summary</h3>
             </div>
             <p className="text-xs text-slate-300 leading-relaxed max-w-4xl">
-              {scope.summary}
+              {renderString(scope?.summary)}
             </p>
             <div className="mt-4 pt-3 border-t border-slate-800/80 text-xs text-slate-400">
               <span className="font-semibold text-teal-400">System Boundaries: </span>
-              {scope.scope}
+              {renderString(scope?.scope)}
             </div>
           </div>
 
@@ -134,7 +169,7 @@ export const ProjectIntelligence: React.FC<ProjectIntelligenceProps> = ({
               <h3 className="text-sm font-semibold text-slate-100">Strategic Project Objectives</h3>
             </div>
             <ul className="space-y-2.5">
-              {scope.objectives.map((obj, i) => (
+              {safeObjectives.map((obj, i) => (
                 <li key={i} className="flex items-start gap-2.5 text-xs text-slate-300">
                   <span className="w-1.5 h-1.5 rounded-full bg-teal-400 mt-1.5 shrink-0" />
                   <span className="leading-relaxed">{obj}</span>
@@ -154,7 +189,7 @@ export const ProjectIntelligence: React.FC<ProjectIntelligenceProps> = ({
               <h3 className="text-sm font-semibold text-slate-100">Core Deliverables</h3>
             </div>
             <ul className="space-y-2.5">
-              {scope.deliverables.map((del, i) => (
+              {safeDeliverables.map((del, i) => (
                 <li key={i} className="flex items-start gap-2.5 text-xs text-slate-300">
                   <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 mt-1.5 shrink-0" />
                   <span className="leading-relaxed">{del}</span>
@@ -174,7 +209,7 @@ export const ProjectIntelligence: React.FC<ProjectIntelligenceProps> = ({
           <h3 className="text-sm font-semibold text-slate-100">Key Requirements Specification</h3>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {scope.requirements.map((req, i) => (
+          {safeRequirements.map((req, i) => (
             <div
               key={i}
               className="p-3 rounded-lg bg-slate-900/60 border border-slate-800 text-xs text-slate-300 flex items-start gap-2.5"
@@ -197,7 +232,7 @@ export const ProjectIntelligence: React.FC<ProjectIntelligenceProps> = ({
             <h3 className="text-sm font-semibold text-slate-100">Milestone Roadmap</h3>
           </div>
           <div className="space-y-3.5">
-            {scope.milestones.map((m, i) => (
+            {safeMilestones.map((m, i) => (
               <div
                 key={i}
                 className="p-3 rounded-lg bg-slate-900/60 border border-slate-800 flex items-center justify-between gap-3"
@@ -234,7 +269,7 @@ export const ProjectIntelligence: React.FC<ProjectIntelligenceProps> = ({
             <h3 className="text-sm font-semibold text-slate-100">Critical Deadlines</h3>
           </div>
           <div className="space-y-3">
-            {scope.deadlines.map((dl, i) => (
+            {safeDeadlines.map((dl, i) => (
               <div
                 key={i}
                 className="p-3 rounded-lg bg-slate-900/60 border border-slate-800 flex items-center justify-between"
@@ -265,7 +300,7 @@ export const ProjectIntelligence: React.FC<ProjectIntelligenceProps> = ({
           <h3 className="text-sm font-semibold text-slate-100">Project Constraints & Compliance Boundaries</h3>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          {scope.constraints.map((con, i) => (
+          {safeConstraints.map((con, i) => (
             <div key={i} className="p-3 rounded-lg bg-slate-900/60 border border-slate-800 text-xs text-slate-300">
               <span className="font-semibold text-amber-400 font-mono block mb-1">Constraint 0{i + 1}</span>
               {con}

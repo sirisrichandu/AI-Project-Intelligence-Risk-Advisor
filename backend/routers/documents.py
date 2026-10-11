@@ -10,6 +10,33 @@ from backend.document_parser import extract_text_from_bytes, chunk_document_text
 
 router = APIRouter(prefix="/api", tags=["documents"])
 
+def auto_extract_project_intelligence():
+    """Immediately extract project scope, risks, blockers upon document upload so all tabs populate."""
+    combined = project_store.get_combined_content()
+    if not combined:
+        return
+    try:
+        from backend.agents.scope_agent import extract_project_scope
+        from backend.agents.risk_agent import detect_project_risks
+        from backend.agents.blocker_action_agent import extract_blockers_and_actions, detect_tasks_at_risk
+        from backend.agents.health_engine import compute_health_score
+
+        project_store.scope = extract_project_scope(combined)
+        project_store.risks = detect_project_risks(combined)
+        b, a = extract_blockers_and_actions(combined)
+        project_store.blockers = b
+        project_store.actions = a
+        project_store.tasks_at_risk = detect_tasks_at_risk(combined, project_store.risks)
+        project_store.health = compute_health_score(
+            project_store.risks,
+            project_store.blockers,
+            project_store.actions,
+            project_store.health.history,
+        )
+    except Exception as e:
+        import logging
+        logging.getLogger("documents").warning(f"Auto-extraction error: {e}")
+
 @router.get("/documents")
 async def get_documents():
     total_chunks = sum(d.chunkCount for d in project_store.documents)
@@ -56,14 +83,39 @@ async def upload_json_documents(req: UploadJsonRequest):
             try:
                 raw_bytes = base64.b64decode(file_item.base64)
                 file_size_bytes = len(raw_bytes)
+                if not raw_bytes:
+                    raise HTTPException(
+                        status_code=422,
+                        detail=f"Uploaded file '{file_item.name}' contains empty byte data (0 bytes)."
+                    )
                 text_content = extract_text_from_bytes(file_item.name, raw_bytes)
+            except HTTPException:
+                raise
             except Exception as e:
-                text_content = f"Error decoding file {file_item.name}: {str(e)}"
-        elif file_item.content:
-            text_content = file_item.content
+                raise HTTPException(
+                    status_code=422,
+                    detail=f"Failed to decode base64 file data for '{file_item.name}': {str(e)}"
+                )
+        elif file_item.content is not None:
+            raw_text = file_item.content.strip()
+            if not raw_text:
+                raise HTTPException(
+                    status_code=422,
+                    detail=f"Text content provided for '{file_item.name}' is empty or whitespace-only."
+                )
+            text_content = raw_text
             file_size_bytes = len(text_content.encode("utf-8"))
         else:
-            text_content = f"Uploaded document: {file_item.name}"
+            raise HTTPException(
+                status_code=422,
+                detail=f"Neither valid file bytes (base64) nor actual text content was provided for '{file_item.name}'."
+            )
+
+        if not text_content or not text_content.strip():
+            raise HTTPException(
+                status_code=422,
+                detail=f"No readable text could be extracted from '{file_item.name}'. The file appears empty or unparseable."
+            )
 
         # Size formatting
         size_kb = max(1, round(file_size_bytes / 1024)) if file_size_bytes else 1
@@ -77,12 +129,19 @@ async def upload_json_documents(req: UploadJsonRequest):
             category=category,
         )
 
-        # 3. Store chunks into persistent ChromaDB
-        indexed_count = chroma_service.add_document_chunks(
+        if not chunks:
+            raise HTTPException(
+                status_code=422,
+                detail=f"Could not generate semantic chunks for '{file_item.name}'. Extracted text content was insufficient."
+            )
+
+        # 3. Store chunks into ChromaDB / persistent vector store
+        indexing_res = chroma_service.add_document_chunks(
             document_id=doc_id,
             document_name=file_item.name,
             chunks=chunks,
         )
+        indexed_count = int(indexing_res)
         total_indexed_chunks += indexed_count
 
         doc = ProjectDocument(
@@ -99,12 +158,24 @@ async def upload_json_documents(req: UploadJsonRequest):
         uploaded_docs.append(doc)
 
     project_store.add_documents(uploaded_docs)
+    auto_extract_project_intelligence()
+
+    storage_mode = getattr(indexing_res, "storage_mode", "native_chromadb" if chroma_service.is_chroma_available else "json_fallback")
+    native_chroma_success = getattr(indexing_res, "native_chroma_success", chroma_service.is_chroma_available)
+
+    if native_chroma_success:
+        summary_msg = f"{len(uploaded_docs)} document(s) uploaded and indexed into native ChromaDB ({total_indexed_chunks} vector chunks)."
+    else:
+        summary_msg = f"{len(uploaded_docs)} document(s) uploaded and indexed into persistent JSON vector store ({total_indexed_chunks} chunks)."
 
     return {
-        "message": f"{len(uploaded_docs)} document(s) uploaded and indexed into ChromaDB ({total_indexed_chunks} vector chunks).",
+        "message": summary_msg,
         "uploadedDocuments": [d.model_dump() for d in uploaded_docs],
         "totalDocuments": len(project_store.documents),
+        "totalKnowledgeChunks": total_indexed_chunks,
         "totalChromaChunks": total_indexed_chunks,
+        "storageMode": storage_mode,
+        "nativeChromaSuccess": native_chroma_success,
         "chromaCollection": "project_knowledge_base",
     }
 
@@ -128,7 +199,18 @@ async def upload_multipart_files(files: List[UploadFile] = File(...)):
 
         # Read binary file bytes
         file_bytes = await file_obj.read()
+        if not file_bytes:
+            raise HTTPException(
+                status_code=422,
+                detail=f"Uploaded file '{file_obj.filename}' is empty (0 bytes)."
+            )
+
         text_content = extract_text_from_bytes(file_obj.filename, file_bytes)
+        if not text_content or not text_content.strip():
+            raise HTTPException(
+                status_code=422,
+                detail=f"No readable text could be extracted from '{file_obj.filename}'. The file appears empty or unparseable."
+            )
 
         # Categorize
         lower_name = file_obj.filename.lower()
@@ -142,13 +224,19 @@ async def upload_multipart_files(files: List[UploadFile] = File(...)):
 
         # Chunk text
         chunks = chunk_document_text(text=text_content, category=category)
+        if not chunks:
+            raise HTTPException(
+                status_code=422,
+                detail=f"Could not generate semantic chunks for '{file_obj.filename}'. Extracted content was insufficient."
+            )
 
-        # Index to ChromaDB
-        indexed_count = chroma_service.add_document_chunks(
+        # Index to ChromaDB / persistent vector store
+        indexing_res = chroma_service.add_document_chunks(
             document_id=doc_id,
             document_name=file_obj.filename,
             chunks=chunks,
         )
+        indexed_count = int(indexing_res)
         total_indexed_chunks += indexed_count
 
         size_kb = max(1, round(len(file_bytes) / 1024))
@@ -167,11 +255,23 @@ async def upload_multipart_files(files: List[UploadFile] = File(...)):
         uploaded_docs.append(doc)
 
     project_store.add_documents(uploaded_docs)
+    auto_extract_project_intelligence()
+
+    storage_mode = getattr(indexing_res, "storage_mode", "native_chromadb" if chroma_service.is_chroma_available else "json_fallback")
+    native_chroma_success = getattr(indexing_res, "native_chroma_success", chroma_service.is_chroma_available)
+
+    if native_chroma_success:
+        summary_msg = f"{len(uploaded_docs)} document(s) uploaded and indexed into native ChromaDB ({total_indexed_chunks} chunks)."
+    else:
+        summary_msg = f"{len(uploaded_docs)} document(s) uploaded and indexed into persistent JSON vector store ({total_indexed_chunks} chunks)."
 
     return {
-        "message": f"{len(uploaded_docs)} document(s) uploaded and indexed into ChromaDB ({total_indexed_chunks} chunks).",
+        "message": summary_msg,
         "uploadedDocuments": [d.model_dump() for d in uploaded_docs],
+        "totalKnowledgeChunks": total_indexed_chunks,
         "totalChromaChunks": total_indexed_chunks,
+        "storageMode": storage_mode,
+        "nativeChromaSuccess": native_chroma_success,
     }
 
 @router.delete("/documents")
@@ -247,7 +347,7 @@ async def download_sample_format(fmt: str):
 @router.get("/sample-files/download/{filename}")
 async def download_real_sample_file(filename: str):
     import os
-    from fastapi.responses import FileResponse, Response
+    from fastapi.responses import FileResponse
 
     # Check if file exists in sample files folder
     candidates = [
@@ -256,13 +356,12 @@ async def download_real_sample_file(filename: str):
         os.path.join("./backend/storage/chroma_db/files", filename),
     ]
     for path in candidates:
-        if os.path.exists(path):
+        if os.path.exists(path) and os.path.isfile(path):
             return FileResponse(path, filename=filename)
 
-    # Fallback response
-    return Response(
-        content=f"Sample file content for {filename}\n".encode("utf-8"),
-        media_type="text/plain; charset=utf-8",
-        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    # Return explicit 404 Not Found when file does not exist on disk
+    raise HTTPException(
+        status_code=404,
+        detail=f"Requested sample file '{filename}' was not found on the server. No placeholder content is generated."
     )
 

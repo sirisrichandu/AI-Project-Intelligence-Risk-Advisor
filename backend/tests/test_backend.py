@@ -203,3 +203,41 @@ def test_knowledge_base_reset_failure_handling(monkeypatch):
     assert fail_resp.status_code == 500
     assert "failed" in fail_resp.json()["detail"].lower()
 
+def test_empty_or_whitespace_extraction_rejected_422():
+    # Empty content string must be rejected with 422
+    resp_empty = client.post("/api/upload-json", json={
+        "files": [{"name": "empty.txt", "content": "   \n\t  "}]
+    })
+    assert resp_empty.status_code == 422
+    assert "empty or whitespace" in resp_empty.json()["detail"].lower()
+
+def test_missing_bytes_and_content_rejected_422():
+    # Neither base64 nor content provided must be rejected with 422
+    resp_missing = client.post("/api/upload-json", json={
+        "files": [{"name": "no_data.pdf"}]
+    })
+    assert resp_missing.status_code == 422
+    assert "neither valid file bytes" in resp_missing.json()["detail"].lower()
+
+def test_missing_sample_file_returns_404():
+    # Downloading non-existent sample file must return 404, not fake placeholder content
+    resp = client.get("/api/sample-files/download/completely_non_existent_file_9988.xyz")
+    assert resp.status_code == 404
+    assert "not found" in resp.json()["detail"].lower()
+
+def test_chroma_insertion_failure_distinguished(monkeypatch):
+    # When collection.add fails, it must fall back to JSON and distinguish native ChromaDB from fallback
+    if chroma_service.collection:
+        def mock_add_fail(*args, **kwargs):
+            raise RuntimeError("ChromaDB mock embedding index failure")
+        monkeypatch.setattr(chroma_service.collection, "add", mock_add_fail)
+
+    res = chroma_service.add_document_chunks(
+        document_id="doc_fail_test",
+        document_name="Fail_Test.txt",
+        chunks=[{"text": "Sample text chunk", "category": "general", "page": 1}]
+    )
+    assert res.native_chroma_success is False
+    assert "fallback" in res.storage_mode.lower()
+
+

@@ -12,6 +12,15 @@ interface NavbarProps {
   onNavigate: (page: string) => void;
 }
 
+const formatDeadline = (dl: any): string => {
+  if (!dl) return 'Active Cycle';
+  if (typeof dl === 'string') return dl;
+  if (typeof dl === 'object') {
+    return dl.date ? `${dl.date}${dl.item ? ` - ${dl.item}` : ''}` : (dl.item || 'Active Cycle');
+  }
+  return String(dl);
+};
+
 export const Navbar: React.FC<NavbarProps> = ({
   summary,
   onOpenAssistant,
@@ -37,7 +46,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             {activePage.replace(/-/g, ' ')}
           </h1>
           <p className="hidden sm:block text-[11px] text-slate-400">
-            {summary?.projectName || 'Project Workspace'} · Target Release: {summary?.projectDeadline || 'Active Cycle'}
+            {summary?.projectName || 'Project Workspace'} · Target Release: {formatDeadline(summary?.projectDeadline)}
           </p>
         </div>
       </div>

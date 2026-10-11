@@ -105,21 +105,71 @@ class ChromaService:
         except Exception as e:
             logger.error(f"Error writing vector_store.json: {e}")
 
+class IndexingResult(dict):
+    """Result object containing indexing metrics and storage status, compatible with int."""
+    def __init__(self, count: int, storage_mode: str, native_chroma_success: bool, error: Optional[str] = None):
+        super().__init__(
+            count=count,
+            storage_mode=storage_mode,
+            native_chroma_success=native_chroma_success,
+            error=error,
+        )
+        self.count = count
+        self.storage_mode = storage_mode
+        self.native_chroma_success = native_chroma_success
+        self.error = error
+
+    def __int__(self):
+        return self.count
+
+    def __index__(self):
+        return self.count
+
+    def __add__(self, other):
+        return self.count + int(other)
+
+    def __radd__(self, other):
+        return int(other) + self.count
+
+    def __eq__(self, other):
+        if isinstance(other, int):
+            return self.count == other
+        return super().__eq__(other)
+
+    def __ge__(self, other):
+        return self.count >= int(other)
+
+    def __gt__(self, other):
+        return self.count > int(other)
+
+    def __le__(self, other):
+        return self.count <= int(other)
+
+    def __lt__(self, other):
+        return self.count < int(other)
+
     def add_document_chunks(
         self,
         document_id: str,
         document_name: str,
         chunks: List[Dict[str, Any]],
         project_id: str = "default_project",
-    ) -> int:
-        """Add text chunks with metadata to the persistent ChromaDB vector store."""
+    ) -> IndexingResult:
+        """
+        Add text chunks with metadata to the vector store.
+        Distinguishes native ChromaDB indexing from fallback JSON persistence.
+        Does not falsely report native ChromaDB success if collection.add() fails.
+        """
         if not chunks:
-            return 0
+            return IndexingResult(0, "none", False, None)
 
         now_str = datetime.utcnow().isoformat() + "Z"
         chunk_records = []
+        native_chroma_success = False
+        chroma_error = None
+        storage_mode = "json_fallback"
 
-        # 1. Store in native ChromaDB
+        # 1. Store in native ChromaDB if available
         if self.is_chroma_available and self.collection:
             try:
                 ids = [f"{document_id}_chunk_{i}" for i in range(len(chunks))]
@@ -139,8 +189,18 @@ class ChromaService:
                     documents=documents,
                     metadatas=metadatas,
                 )
+                native_chroma_success = True
+                storage_mode = "native_chromadb"
             except Exception as e:
-                logger.warning(f"Native ChromaDB add error: {e}")
+                chroma_error = str(e)
+                logger.error(
+                    f"Native ChromaDB collection.add() failed for document '{document_name}': {e}. "
+                    "Falling back to persistent JSON vector store."
+                )
+                native_chroma_success = False
+                storage_mode = "json_fallback_after_chroma_error"
+        else:
+            storage_mode = "json_fallback"
 
         # 2. Prepare chunk records for human-readable mirror and persistence
         for i, c in enumerate(chunks):
@@ -167,7 +227,12 @@ class ChromaService:
         except Exception as e:
             logger.error(f"Error persisting vector_store.json: {e}")
 
-        return len(chunks)
+        return IndexingResult(
+            count=len(chunks),
+            storage_mode=storage_mode,
+            native_chroma_success=native_chroma_success,
+            error=chroma_error,
+        )
 
     def query_similarity(
         self,

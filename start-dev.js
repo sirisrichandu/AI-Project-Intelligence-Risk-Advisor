@@ -28,8 +28,10 @@ async function waitForBackend(maxAttempts = 30) {
 }
 
 function startBackend() {
-  console.log(`[start-dev] Starting FastAPI backend on port ${FASTAPI_PORT}...`);
+  console.log(`[start-dev] Starting backend service on port ${FASTAPI_PORT}...`);
   const pythonCmd = process.platform === 'win32' ? 'python' : 'python3';
+
+  // Try spawning Python backend first; if python fails or uvicorn is missing, spawn tsx server.ts
   backendProcess = spawn(
     pythonCmd,
     ['-m', 'uvicorn', 'backend.main:app', '--host', '0.0.0.0', '--port', String(FASTAPI_PORT)],
@@ -37,7 +39,30 @@ function startBackend() {
   );
 
   backendProcess.on('error', (err) => {
-    console.error(`[start-dev] Failed to spawn Python backend (${pythonCmd}):`, err.message);
+    console.warn(`[start-dev] Python backend unavailable (${err.message}). Starting full-stack TypeScript backend server...`);
+    spawnTsxBackend();
+  });
+
+  backendProcess.on('exit', (code) => {
+    if (code !== 0 && code !== null) {
+      console.warn(`[start-dev] Python backend exited with code ${code}. Starting full-stack TypeScript backend server on port ${FASTAPI_PORT}...`);
+      spawnTsxBackend();
+    }
+  });
+}
+
+function spawnTsxBackend() {
+  const npxCmd = process.platform === 'win32' ? 'npx.cmd' : 'npx';
+  backendProcess = spawn(
+    npxCmd,
+    ['tsx', 'server.ts'],
+    {
+      stdio: 'inherit',
+      env: { ...process.env, PORT: String(FASTAPI_PORT) },
+    }
+  );
+  backendProcess.on('error', (err) => {
+    console.error('[start-dev] Failed to spawn TypeScript backend server:', err.message);
   });
 }
 

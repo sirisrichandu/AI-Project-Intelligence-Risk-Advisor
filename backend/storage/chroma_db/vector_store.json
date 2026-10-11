@@ -2,51 +2,9 @@
   "collection": "project_knowledge_base",
   "storage_engine": "ChromaDB Persistent Store",
   "persist_directory": "./backend/storage/chroma_db",
-  "total_chunks": 2,
-  "total_documents": 2,
-  "last_updated": "2026-10-10T01:31:52.784554Z",
-  "documents": [
-    {
-      "id": "doc-1791595911588-0",
-      "name": "Demo_Drone_Surveillance.md",
-      "type": "MD",
-      "size": "1 KB",
-      "category": "requirements",
-      "chunkCount": 1,
-      "uploadDate": "2026-10-10",
-      "status": "COMPLETED"
-    },
-    {
-      "id": "doc_beta",
-      "name": "Beta_Spec.txt",
-      "type": "TXT",
-      "size": "1 KB",
-      "category": "general",
-      "chunkCount": 1,
-      "uploadDate": "2026-10-10",
-      "status": "COMPLETED"
-    }
-  ],
-  "chunks": [
-    {
-      "id": "doc-1791595911588-0_chunk_0",
-      "document_id": "doc-1791595911588-0",
-      "project_id": "default_project",
-      "document_name": "Demo_Drone_Surveillance.md",
-      "category": "requirements",
-      "page": 1,
-      "text": "New Demonstration Artifact: High-resolution thermal drone camera integration. Requirement: Real-time worker thermal signature detection. Risk: High temperature overheating in direct desert sun operations.",
-      "created_at": "2026-10-10T01:31:51.588725Z"
-    },
-    {
-      "id": "doc_beta_chunk_0",
-      "document_id": "doc_beta",
-      "project_id": "proj_beta",
-      "document_name": "Beta_Spec.txt",
-      "category": "general",
-      "page": 1,
-      "text": "Project Beta critical roadmap milestones.",
-      "created_at": "2026-10-10T01:31:52.488846Z"
-    }
-  ]
+  "total_chunks": 0,
+  "total_documents": 0,
+  "last_updated": "2026-10-10T02:56:23.823834Z",
+  "documents": [],
+  "chunks": []
 }

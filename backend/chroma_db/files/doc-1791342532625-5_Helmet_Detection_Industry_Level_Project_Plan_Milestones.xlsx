@@ -1,7 +1,0 @@
-Milestone_ID,Milestone_Name,Target_Date,Status,Owner,Deliverables
-M-01,Adverse-Condition Dataset Coverage Signoff,2026-10-12,In Progress,ML Lead,Synthetic glare and night test manifest
-M-02,OCR Accuracy Benchmark Validation,2026-10-15,In Progress,OCR Engineer,Held-out benchmark accuracy report >= 90%
-M-03,Inference API Contract Freezing,2026-10-10,In Progress,Backend Lead,Versioned OpenAPI 3.0 specification & mocks
-M-04,Evidence Persistence & Idempotency Signoff,2026-10-14,Upcoming,Backend Engineer,Automated retry tests & DB uniqueness constraints
-M-05,End-to-End Representative Test Pack Execution,2026-10-20,Upcoming,QA Lead,Traceable test matrix across 13 core scenarios
-M-06,Production Governance & Security Signoff,2026-10-25,Upcoming,Security Lead,Evidence retention policy and RBAC audit

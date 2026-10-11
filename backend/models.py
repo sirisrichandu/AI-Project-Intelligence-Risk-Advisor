@@ -23,13 +23,23 @@ class UploadJsonFileItem(BaseModel):
 class UploadJsonRequest(BaseModel):
     files: List[UploadJsonFileItem]
 
+class MilestoneItem(BaseModel):
+    name: str
+    targetDate: str = "Upcoming"
+    status: str = "Upcoming"  # Completed, In Progress, Upcoming
+
+class DeadlineItem(BaseModel):
+    item: str
+    date: str = "Upcoming"
+    criticality: str = "High"  # High, Medium, Low
+
 class ProjectScope(BaseModel):
     objectives: List[str] = Field(default_factory=list)
     scope: str = ""
     requirements: List[str] = Field(default_factory=list)
     deliverables: List[str] = Field(default_factory=list)
-    milestones: List[str] = Field(default_factory=list)
-    deadlines: List[str] = Field(default_factory=list)
+    milestones: List[Union[MilestoneItem, Dict[str, Any]]] = Field(default_factory=list)
+    deadlines: List[Union[DeadlineItem, Dict[str, Any]]] = Field(default_factory=list)
     constraints: List[str] = Field(default_factory=list)
     summary: str = ""
 

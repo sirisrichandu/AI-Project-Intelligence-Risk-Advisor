@@ -52,11 +52,23 @@ async def get_project_summary():
         if project_store.documents
         else "Project Workspace"
     )
-    project_deadline = (
-        project_store.scope.deadlines[0]
-        if project_store.scope.deadlines
-        else ("Under Evaluation" if project_store.documents else "Ready For Upload")
-    )
+    project_deadline = "Ready For Upload"
+    if project_store.scope.deadlines:
+        first_dl = project_store.scope.deadlines[0]
+        if isinstance(first_dl, str):
+            project_deadline = first_dl
+        elif isinstance(first_dl, dict):
+            d_date = first_dl.get("date") or first_dl.get("targetDate") or ""
+            d_item = first_dl.get("item") or first_dl.get("name") or ""
+            project_deadline = f"{d_date} - {d_item}" if (d_date and d_item) else (d_date or d_item or "Under Evaluation")
+        elif hasattr(first_dl, "date") and hasattr(first_dl, "item"):
+            d_date = str(first_dl.date)
+            d_item = str(first_dl.item)
+            project_deadline = f"{d_date} - {d_item}" if (d_date and d_item) else (d_date or d_item or "Under Evaluation")
+        else:
+            project_deadline = str(first_dl)
+    elif project_store.documents:
+        project_deadline = "Under Evaluation"
 
     return {
         "projectName": project_name,

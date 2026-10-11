@@ -99,7 +99,7 @@ export async function extractTextFromBuffer(filename: string, buffer: Buffer): P
       if (words.length > 15) return words.slice(0, 2000).join(' ');
     } catch {}
 
-    return `[PDF Document: ${filename}]\nUploaded and indexed for AI project intelligence analysis.`;
+    return '';
   }
 
   if (ext === 'docx' || ext === 'doc') {
@@ -112,7 +112,7 @@ export async function extractTextFromBuffer(filename: string, buffer: Buffer): P
     } catch (err) {
       console.warn(`Mammoth extraction error for ${filename}:`, err);
     }
-    return `[Word Document: ${filename}]\nUploaded and indexed for AI project intelligence analysis.`;
+    return '';
   }
 
   if (ext === 'xlsx' || ext === 'xls') {
@@ -131,7 +131,7 @@ export async function extractTextFromBuffer(filename: string, buffer: Buffer): P
     } catch (err) {
       console.warn(`XLSX extraction error for ${filename}:`, err);
     }
-    return `[Excel Spreadsheet: ${filename}]\nUploaded and indexed for AI project intelligence analysis.`;
+    return '';
   }
 
   // Plain text, CSV, TSV, Markdown, JSON
@@ -355,6 +355,11 @@ function writeChromaStore(docs: any[], chunks: any[]) {
 // Proxy helper to FastAPI when explicitly configured
 async function forwardToFastApi(req: Request, res: Response, targetPath: string): Promise<boolean> {
   if (!FASTAPI_URL) return false;
+  // Prevent infinite self-forwarding loop if server is listening on the same port
+  const portMatch = FASTAPI_URL.match(/:(\d+)/);
+  if (portMatch && String(PORT) === portMatch[1]) {
+    return false;
+  }
   try {
     const url = `${FASTAPI_URL}${targetPath}`;
     const options: RequestInit = {
@@ -401,6 +406,8 @@ let projectActions: any[] = [];
 let projectTasksAtRisk: any[] = [];
 let chatHistory: any[] = [];
 let latestDocOutput = '';
+let hasParsedIntelligence = false;
+let lastParsedDocIds = '';
 
 function parseDocumentIntelligence(docs: any[]) {
   if (!docs || docs.length === 0) {
@@ -529,7 +536,7 @@ function parseDocumentIntelligence(docs: any[]) {
   }
 
   // 2. Parse Standup Notes: BLOCKER B-01 — TITLE
-  const blockerMatches = combinedText.matchAll(/(?:^|\n)\s*BLOCKER\s+([A-Z0-9_-]+)\s*[—:-]\s*([^\n]+)([\s\S]*?)(?=(?:^|\n)\s*BLOCKER\b|\bACTION\b|\b[0-9]+\.\s+[A-Z]|$)/gi);
+  const blockerMatches = combinedText.matchAll(/(?:^|\n)\s*BLOCKER\s+([A-Z0-9_-]+)\s*[—:-]\s*([^\n]+)([\s\S]*?)(?=(?:^|\n)\s*BLOCKER\b|\bACTION\b|\bRISK\b|\b[0-9]+\.\s+[A-Z]|$)/gi);
   for (const m of blockerMatches) {
     const id = m[1].trim();
     const title = m[2].trim().replace(/^[—:-]\s*/, '');
@@ -540,7 +547,6 @@ function parseDocumentIntelligence(docs: any[]) {
     const desc = body.replace(/(Owner|Status|Impact|Required resolution|Target date):[^\n]*/gi, '').trim().slice(0, 240) || title;
     const targetDate = (body.match(/Target date:\s*([^\n]+)/i)?.[1] || '2026-10-15').trim();
 
-    // Avoid duplicates
     if (!extractedBlockers.some((b) => b.id.toLowerCase() === id.toLowerCase() || b.title.toLowerCase() === title.toLowerCase())) {
       extractedBlockers.push({
         id: id.startsWith('B-') || id.startsWith('BLK-') ? id : `BLK-${id}`,
@@ -558,8 +564,8 @@ function parseDocumentIntelligence(docs: any[]) {
     }
   }
 
-  // 3. Parse Action Items: A-01: ...
-  const actionMatches = combinedText.matchAll(/(?:^|\n)\s*(?:ACTION|A-)\s*([A-Z0-9_-]+)[:—\s]+([^\n]+)([\s\S]*?)(?=(?:^|\n)\s*ACTION\b|\bBLOCKER\b|\b[0-9]+\.\s+[A-Z]|$)/gi);
+  // 3. Parse Action Items: A-01: ... or ACTION A-01: ...
+  const actionMatches = combinedText.matchAll(/(?:^|\n)\s*(?:ACTION|A-)\s*([A-Z0-9_-]+)[:—\s]+([^\n]+)([\s\S]*?)(?=(?:^|\n)\s*ACTION\b|\bBLOCKER\b|\bRISK\b|\b[0-9]+\.\s+[A-Z]|$)/gi);
   for (const m of actionMatches) {
     const id = m[1].trim();
     const title = m[2].trim();
@@ -583,240 +589,41 @@ function parseDocumentIntelligence(docs: any[]) {
     }
   }
 
-  // Fallbacks if documents have limited text
-  if (extractedBlockers.length === 0) {
-    extractedBlockers.push(
-      {
-        id: 'B-01',
-        title: 'Adverse-Condition Dataset Coverage Gap',
-        priority: 'Critical',
-        owner: 'ML Lead',
-        description: 'Validation set contains limited low-light, rain, glare, and motion-blur samples, reducing production confidence.',
-        impact: 'Model may produce false-positives under adverse conditions.',
-        suggestedResolution: 'Expand scenario dataset and benchmark edge cases.',
-        suggestedAction: 'Expand scenario dataset and benchmark edge cases.',
-        status: 'Active',
-        dueDate: '2026-10-12',
-        impactedTasks: ['Model Acceptance', 'Production Deployment Gate'],
-      },
-      {
-        id: 'B-02',
-        title: 'OCR Accuracy Below Acceptance Threshold',
-        priority: 'Critical',
-        owner: 'OCR Engineer',
-        description: 'Number-plate OCR is inconsistent for blurred, skewed, small, and poorly illuminated plates.',
-        impact: 'Incorrect plate text can cause unreliable evidence records.',
-        suggestedResolution: 'Tune preprocessing, confidence thresholds, plate cropping, and OCR fallback handling.',
-        suggestedAction: 'Tune preprocessing, confidence thresholds, plate cropping, and OCR fallback handling.',
-        status: 'Active',
-        dueDate: '2026-10-15',
-        impactedTasks: ['OCR Integration', 'Evidence Quality Signoff'],
-      },
-      {
-        id: 'B-03',
-        title: 'Inference API Contract Freezing Pending',
-        priority: 'High',
-        owner: 'Backend Lead',
-        description: 'Frontend and backend teams have not finalized request/response schema for inference confidence and trace IDs.',
-        impact: 'Integration testing and UI data binding are blocked.',
-        suggestedResolution: 'Publish versioned OpenAPI contract and deploy mock provider for client integration.',
-        suggestedAction: 'Publish versioned OpenAPI contract and deploy mock provider for client integration.',
-        status: 'Active',
-        dueDate: '2026-10-10',
-        impactedTasks: ['API Release Gate', 'UI Integration'],
-      }
-    );
+  // 4. Parse Standup Notes / Markdown Risks: RISK RSK-01 — TITLE or RISK RSK-01: TITLE
+  const riskMatches = combinedText.matchAll(/(?:^|\n)\s*RISK\s+([A-Z0-9_-]+)\s*[—:-]\s*([^\n]+)([\s\S]*?)(?=(?:^|\n)\s*(?:RISK|BLOCKER|ACTION)\b|\b[0-9]+\.\s+[A-Z]|$)/gi);
+  for (const m of riskMatches) {
+    const id = m[1].trim();
+    const title = m[2].trim().replace(/^[—:-]\s*/, '');
+    const body = m[3] || '';
+    const owner = (body.match(/Owner:\s*([^\n]+)/i)?.[1] || 'Assigned Lead').trim();
+    const category = (body.match(/Category:\s*([^\n]+)/i)?.[1] || 'Technical').trim();
+    const severityRaw = (body.match(/Severity:\s*([^\n]+)/i)?.[1] || '').trim();
+    const severity = /crit/i.test(severityRaw) || /crit/i.test(title) ? 'Critical' : 'High';
+    const probMatch = body.match(/Probability:\s*(\d+)%?/i);
+    const impMatch = body.match(/Impact:\s*(\d+)%?/i);
+    const probability = probMatch ? parseInt(probMatch[1], 10) : severity === 'Critical' ? 80 : 65;
+    const impact = impMatch ? parseInt(impMatch[1], 10) : severity === 'Critical' ? 85 : 75;
+    const mitigation = (body.match(/(?:Mitigation|Resolution):\s*([^\n]+)/i)?.[1] || 'Triage and monitor risk mitigation pathway.').trim();
+    const formattedId = id.startsWith('RSK-') ? id : `RSK-${id}`;
+
+    if (!extractedRisks.some((r) => r.id.toLowerCase() === formattedId.toLowerCase() || r.title.toLowerCase() === title.toLowerCase())) {
+      extractedRisks.push({
+        id: formattedId,
+        title,
+        category,
+        severity,
+        probability,
+        impact,
+        description: body.replace(/(Owner|Category|Severity|Probability|Impact|Mitigation|Resolution|Target date):[^\n]*/gi, '').trim().slice(0, 240) || title,
+        evidence: `Extracted from project risk documentation (${owner})`,
+        mitigation,
+        owner,
+        status: 'Open',
+      });
+    }
   }
 
-  if (extractedActions.length === 0) {
-    extractedActions.push(
-      {
-        id: 'A-01',
-        task: 'Add adverse-condition samples to validation dataset',
-        title: 'Add adverse-condition samples to validation dataset',
-        owner: 'ML Lead',
-        priority: 'Critical',
-        deadline: '2026-10-12',
-        dueDate: '2026-10-12',
-        status: 'In Progress',
-        description: 'Incorporate rain, glare, low-light, and motion-blurred traffic frames.',
-      },
-      {
-        id: 'A-02',
-        task: 'Benchmark OCR on blur, skew, low-light, and small-plate scenarios',
-        title: 'Benchmark OCR on blur, skew, low-light, and small-plate scenarios',
-        owner: 'OCR Engineer',
-        priority: 'Critical',
-        deadline: '2026-10-15',
-        dueDate: '2026-10-15',
-        status: 'Pending',
-        description: 'Tune preprocessing, plate cropping, and fallback manual-review routing.',
-      },
-      {
-        id: 'A-03',
-        task: 'Publish versioned inference API contract and sample payloads',
-        title: 'Publish versioned inference API contract and sample payloads',
-        owner: 'Backend Lead',
-        priority: 'High',
-        deadline: '2026-10-10',
-        dueDate: '2026-10-10',
-        status: 'Pending',
-        description: 'Freeze request/response payloads with frontend and QA leads.',
-      },
-      {
-        id: 'A-04',
-        task: 'Document rider/helmet/vehicle association rules',
-        title: 'Document rider/helmet/vehicle association rules',
-        owner: 'ML Lead',
-        priority: 'High',
-        deadline: '2026-10-11',
-        dueDate: '2026-10-11',
-        status: 'In Progress',
-        description: 'Define spatial bounding box and confidence association heuristics.',
-      },
-      {
-        id: 'A-05',
-        task: 'Approve evidence retention and access-control policy',
-        title: 'Approve evidence retention and access-control policy',
-        owner: 'Product Owner + Security',
-        priority: 'High',
-        deadline: '2026-10-18',
-        dueDate: '2026-10-18',
-        status: 'Pending',
-        description: 'Finalize storage retention duration and role-based access rules.',
-      }
-    );
-  }
-
-  // Build tasks at risk based on blockers
-  extractedBlockers.forEach((b: any, idx: number) => {
-    extractedTasks.push({
-      id: `TSK-10${idx + 1}`,
-      taskId: `TSK-10${idx + 1}`,
-      name: b.impactedTasks?.[0] || `${b.title} Verification`,
-      taskName: b.impactedTasks?.[0] || `${b.title} Verification`,
-      owner: b.owner || 'Assigned Lead',
-      assignee: b.owner || 'Assigned Lead',
-      dueDate: b.dueDate || '2026-10-22',
-      milestone: 'Sprint Release Gate',
-      reason: `Blocked by ${b.id}: ${b.title}`,
-      riskReason: `Blocked by ${b.id}: ${b.title}`,
-      severity: b.priority === 'Critical' ? 'Critical' : 'High',
-      daysDelayed: 3 + idx,
-    });
-  });
-
-  const isHelmetDetection =
-    combinedText.toLowerCase().includes('helmet') ||
-    combinedText.toLowerCase().includes('plate') ||
-    docs.some((d: any) => (d.name || '').toLowerCase().includes('helmet'));
-
-  if (isHelmetDetection) {
-    const canonicalHelmetRisks = [
-      {
-        id: 'RSK-01',
-        title: 'Adverse Environmental Lighting & Weather Generalization Gap',
-        category: 'Technical',
-        severity: 'Critical',
-        probability: 75,
-        impact: 85,
-        description: 'Model accuracy degrades under low-light night scenes, rain glare, and motion blur without dataset augmentation.',
-        evidence: `Extracted from ${docs[0]?.name || 'project documentation'}`,
-        mitigation: 'Add synthetic glare, rain augmentation, and expand night validation set.',
-        owner: 'ML Lead',
-        status: 'Open',
-      },
-      {
-        id: 'RSK-02',
-        title: 'Inference Latency Exceeding Target on Edge Hardware',
-        category: 'Technical',
-        severity: 'High',
-        probability: 60,
-        impact: 75,
-        description: 'YOLOv8 inference combined with OCR plate recognition may exceed required latency budget.',
-        evidence: 'Sprint retro performance notes and target deployment hardware.',
-        mitigation: 'Implement asynchronous queue and benchmark INT8 TensorRT quantization.',
-        owner: 'ML Lead + DevOps',
-        status: 'Open',
-      },
-      {
-        id: 'RSK-03',
-        title: 'Inference API Contract Freezing Delays',
-        category: 'Schedule',
-        severity: 'High',
-        probability: 50,
-        impact: 70,
-        description: 'Pending API schema sign-off blocks frontend integration and automated test suite.',
-        evidence: 'ISS-003 and Standup notes.',
-        mitigation: 'Finalize versioned OpenAPI spec and deploy mock provider for client integration.',
-        owner: 'Backend Lead',
-        status: 'Open',
-      },
-      {
-        id: 'RSK-04',
-        title: 'Duplicate Evidence Records Generated on Retries',
-        category: 'Data Integrity',
-        severity: 'High',
-        probability: 45,
-        impact: 65,
-        description: 'Repeated API requests create duplicate violation records when client retries on timeout.',
-        evidence: 'Issue ISS-006 and Sprint retro notes.',
-        mitigation: 'Implement idempotency keys and unique compound database constraints.',
-        owner: 'Backend Engineer',
-        status: 'Open',
-      },
-      {
-        id: 'RSK-05',
-        title: 'Evidence Retention Policy Governance Approval Delays',
-        category: 'Compliance',
-        severity: 'High',
-        probability: 40,
-        impact: 80,
-        description: 'Storage retention duration and access rules for original images and plate crops require regulatory signoff.',
-        evidence: 'Issue ISS-005 and Security Architecture notes.',
-        mitigation: 'Engage Data Protection Officer and Product Owner for legal policy signoff.',
-        owner: 'Product Owner + Security',
-        status: 'Open',
-      },
-    ];
-
-    canonicalHelmetRisks.forEach((cr) => {
-      if (!extractedRisks.some((r) => r.id.toLowerCase() === cr.id.toLowerCase() || r.title.toLowerCase() === cr.title.toLowerCase())) {
-        extractedRisks.push(cr);
-      }
-    });
-  } else if (extractedRisks.length === 0) {
-    extractedRisks.push(
-      {
-        id: 'RSK-01',
-        title: 'Third-Party Integration API Latency',
-        category: 'Technical',
-        severity: 'High',
-        probability: 65,
-        impact: 80,
-        description: 'Potential timeout during external webhook ingestion.',
-        evidence: `Extracted from ${docs[0]?.name || 'project documentation'}`,
-        mitigation: 'Implement exponential backoff retry and asynchronous worker queue.',
-        owner: 'Backend Lead',
-        status: 'Open',
-      },
-      {
-        id: 'RSK-02',
-        title: 'Release Schedule Crunch & Testing Bottleneck',
-        category: 'Schedule',
-        severity: 'High',
-        probability: 55,
-        impact: 70,
-        description: 'Tight testing timeline before production deployment window.',
-        evidence: 'Backlog sprint deadlines.',
-        mitigation: 'Prioritize critical path deliverables and run automated end-to-end tests.',
-        owner: 'QA Lead',
-        status: 'Open',
-      }
-    );
-  }
-
-  // Dynamic extraction for non-helmet documents
+  // 5. Dynamic line extraction for milestones, scope, deliverables, requirements, constraints, and inline records
   const primaryDocName = docs[0]?.name?.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ') || 'Uploaded Artifacts';
   const textLines = combinedText.split(/\r?\n/).map((l: string) => l.trim()).filter(Boolean);
 
@@ -876,138 +683,161 @@ function parseDocumentIntelligence(docs: any[]) {
         parsedConstraints.push(con);
       }
     }
+
+    // Inline / Bullet Risks: Risk: ... or RSK-01: ...
+    if (/^(?:risk|rsk[-0-9]*):?\s+/i.test(clean)) {
+      const idMatch = clean.match(/\b(RSK-[A-Z0-9_-]+)\b/i);
+      const id = idMatch ? idMatch[1].toUpperCase() : '';
+      if (id && extractedRisks.some((r) => r.id.toLowerCase() === id.toLowerCase())) {
+        // already extracted by block parser
+      } else {
+        const riskText = clean
+          .replace(/^(?:risk|rsk[-0-9]*)\b\s*(?:[A-Z0-9_-]+\s*[:—\-]\s*)?/i, '')
+          .replace(/^[:—\-]\s*/, '')
+          .trim();
+        if (riskText.length > 5 && !extractedRisks.some((r) => r.title.toLowerCase() === riskText.toLowerCase() || r.description.toLowerCase() === riskText.toLowerCase())) {
+          const finalId = id || `RSK-0${extractedRisks.length + 1}`;
+          const isCrit = /crit/i.test(clean);
+          extractedRisks.push({
+            id: finalId,
+            title: riskText.slice(0, 80),
+            category: 'Technical',
+            severity: isCrit ? 'Critical' : 'High',
+            probability: isCrit ? 80 : 65,
+            impact: isCrit ? 85 : 75,
+            description: riskText,
+            evidence: `Document statement: ${riskText.slice(0, 100)}`,
+            mitigation: 'Triage and execute mitigation roadmap.',
+            owner: 'Assigned Lead',
+            status: 'Open',
+          });
+        }
+      }
+    }
+
+    // Inline / Bullet Blockers: Blocker: ... or BLK-01: ... or B-01: ...
+    if (/^(?:blocker|blk[-0-9]*|b[-0-9]+):?\s+/i.test(clean)) {
+      const idMatch = clean.match(/\b(B-[A-Z0-9_-]+|BLK-[A-Z0-9_-]+)\b/i);
+      const id = idMatch ? idMatch[1].toUpperCase() : '';
+      if (id && extractedBlockers.some((b) => b.id.toLowerCase() === id.toLowerCase() || b.id.toLowerCase() === `blk-${id.toLowerCase()}`)) {
+        // already extracted by block parser
+      } else {
+        const blkText = clean
+          .replace(/^(?:blocker|blk[-0-9]*|b[-0-9]+)\b\s*(?:[A-Z0-9_-]+\s*[:—\-]\s*)?/i, '')
+          .replace(/^[:—\-]\s*/, '')
+          .trim();
+        if (blkText.length > 5 && !extractedBlockers.some((b) => b.title.toLowerCase() === blkText.toLowerCase() || b.description.toLowerCase() === blkText.toLowerCase())) {
+          const finalId = id || `BLK-0${extractedBlockers.length + 1}`;
+          extractedBlockers.push({
+            id: finalId,
+            title: blkText.slice(0, 80),
+            priority: /crit/i.test(clean) ? 'Critical' : 'High',
+            owner: 'Assigned Lead',
+            description: blkText,
+            impact: 'Delivery impediment requiring technical resolution.',
+            suggestedResolution: 'Expedite technical triage and unblock critical path.',
+            suggestedAction: 'Expedite technical triage and unblock critical path.',
+            status: 'Active',
+            dueDate: '2026-10-25',
+            impactedTasks: ['Sprint Delivery Gate'],
+          });
+        }
+      }
+    }
+
+    // Inline / Bullet Action Items: Action: ... or ACT-01: ... or A-01: ...
+    if (/^(?:action|action\s*item|act[-0-9]*|a[-0-9]+):?\s+/i.test(clean)) {
+      const idMatch = clean.match(/\b(A-[A-Z0-9_-]+|ACT-[A-Z0-9_-]+)\b/i);
+      const id = idMatch ? idMatch[1].toUpperCase() : '';
+      if (id && extractedActions.some((a) => a.id.toLowerCase() === id.toLowerCase() || a.id.toLowerCase() === `act-${id.toLowerCase()}`)) {
+        // already extracted by block parser
+      } else {
+        const actText = clean
+          .replace(/^(?:action|action\s*item|act[-0-9]*|a[-0-9]+)\b\s*(?:[A-Z0-9_-]+\s*[:—\-]\s*)?/i, '')
+          .replace(/^[:—\-]\s*/, '')
+          .trim();
+        if (actText.length > 5 && !extractedActions.some((a) => a.title.toLowerCase() === actText.toLowerCase() || a.task?.toLowerCase() === actText.toLowerCase())) {
+          const finalId = id || `ACT-0${extractedActions.length + 1}`;
+          extractedActions.push({
+            id: finalId,
+            task: actText.slice(0, 80),
+            title: actText.slice(0, 80),
+            owner: 'Assigned Lead',
+            priority: /crit/i.test(clean) ? 'Critical' : 'High',
+            deadline: '2026-10-25',
+            dueDate: '2026-10-25',
+            status: 'Pending',
+            description: actText,
+          });
+        }
+      }
+    }
   }
 
-  const finalMilestones = parsedMilestones.length > 0
-    ? parsedMilestones
-    : [
-        { name: `${primaryDocName} — Ingestion & Scope Baseline`, targetDate: '2026-10-12', status: 'Completed' as const },
-        { name: 'Core Architecture & Implementation Verification', targetDate: '2026-10-18', status: 'In Progress' as const },
-        { name: 'Integration Testing & Quality Gate Signoff', targetDate: '2026-10-24', status: 'Upcoming' as const },
-        { name: 'Production Deployment & Acceptance Release', targetDate: '2026-10-31', status: 'Upcoming' as const },
-      ];
+  // Build tasks at risk strictly based on actual extracted blockers
+  extractedBlockers.forEach((b: any, idx: number) => {
+    extractedTasks.push({
+      id: `TSK-10${idx + 1}`,
+      taskId: `TSK-10${idx + 1}`,
+      name: b.impactedTasks?.[0] || `${b.title} Verification`,
+      taskName: b.impactedTasks?.[0] || `${b.title} Verification`,
+      owner: b.owner || 'Assigned Lead',
+      assignee: b.owner || 'Assigned Lead',
+      dueDate: b.dueDate || '2026-10-22',
+      milestone: 'Sprint Release Gate',
+      reason: `Blocked by ${b.id}: ${b.title}`,
+      riskReason: `Blocked by ${b.id}: ${b.title}`,
+      severity: b.priority === 'Critical' ? 'Critical' : 'High',
+      daysDelayed: 3 + idx,
+    });
+  });
 
-  const finalObjectives = parsedObjectives.length > 0
-    ? parsedObjectives
-    : [
-        `Deliver functional objectives specified in ${primaryDocName}`,
-        'Automate multi-agent risk detection, blocker mitigation tracking, and composite health assessment',
-        `Ground project reasoning in persistent ChromaDB vector storage for ${docs.length} uploaded artifact(s)`,
-      ];
+  const isHelmetDetection =
+    combinedText.toLowerCase().includes('helmet') ||
+    combinedText.toLowerCase().includes('plate') ||
+    docs.some((d: any) => (d.name || '').toLowerCase().includes('helmet'));
 
-  const finalDeliverables = parsedDeliverables.length > 0
-    ? parsedDeliverables
-    : [
-        `${primaryDocName} Specification & Architecture Dossier`,
-        'Risk Priority Matrix & Mitigation Roadmap',
-        'Active Blocker Register & Sprint Action Items',
-        'Unified Knowledge Base with Semantic Chunking',
-      ];
-
-  const finalRequirements = parsedRequirements.length > 0
-    ? parsedRequirements
-    : [
-        `System must fulfill core capabilities specified in ${primaryDocName}.`,
-        'Autonomous multi-agent verification (Scope, Risks, Blockers, Actions, Health, Documentation).',
-        'Persistent ChromaDB vector indexing with source citation.',
-        'High-reliability API integration adhering to project governance.',
-      ];
-
-  const finalConstraints = parsedConstraints.length > 0
-    ? parsedConstraints
-    : [
-        'Must operate with zero latency across vector search operations.',
-        'Must enforce role-based access control and strict data privacy standards.',
-        'Must satisfy project quality and security compliance gates before release.',
-      ];
-
-  const finalDeadlines = finalMilestones.map((m) => ({
+  const finalDeadlines = parsedMilestones.map((m) => ({
     item: m.name,
     date: m.targetDate,
     criticality: (m.status === 'In Progress' ? 'High' : 'Medium') as 'High' | 'Medium',
   }));
 
   const extractedScope = {
-    summary: isHelmetDetection
-      ? `Project intelligence synthesized from ${docs.length} uploaded artifacts covering the Helmet Detection & Number Plate Recognition computer vision system. High priority on model validation under adverse weather, OCR plate accuracy, and evidence persistence.`
-      : `Project intelligence synthesized from ${docs.length} uploaded artifact(s) (${docs.map((d: any) => d.name).join(', ')}). Comprehensive extraction across strategic objectives, core deliverables, milestone roadmap, and risk registers.`,
-    scope: isHelmetDetection
-      ? `Computer-vision violation enforcement system boundaries: covers traffic camera frame ingestion, YOLOv8 helmet detection, vehicle plate cropping, OCR extraction, evidence persistence, and human review routing for uncertain decisions.`
-      : `System boundaries established from ${docs.length} project artifact(s). Covers end-to-end deliverables, delivery milestones, dependency management, and quality signoff gates for ${primaryDocName}.`,
-    objectives: isHelmetDetection
-      ? [
-          'Develop a robust computer-vision pipeline detecting helmet compliance from traffic video feeds.',
-          'Extract vehicle and number-plate characters using OCR with confidence thresholds.',
-          'Preserve traceable, immutable evidence records with unique identifiers and audit timestamps.',
-          'Route low-confidence detections and ambiguous plate crops to an operator review workflow.',
-          'Prevent duplicate violation records on network retries using idempotency keys.',
-        ]
-      : finalObjectives,
-    deliverables: isHelmetDetection
-      ? [
-          'YOLOv8 Helmet Detection Model & Inference Engine',
-          'Number-Plate Cropping & OCR Text Extraction Module',
-          'Evidence Persistence Service with Idempotency Support',
-          'Operator Review Queue for Low-Confidence Detections',
-          'End-to-End Test Pack covering Adverse Environmental Scenarios',
-        ]
-      : finalDeliverables,
-    requirements: isHelmetDetection
-      ? [
-          'Dataset Coverage: Model must validate across low-light, rain, glare, and motion-blur frames.',
-          'OCR Benchmark: Number-plate OCR must achieve approved accuracy threshold on held-out test pack.',
-          'API Contract: Versioned REST API schema frozen with signed-off request/response payloads.',
-          'Association Logic: Deterministic association rules linking rider, helmet, and vehicle.',
-          'Data Governance: Approved evidence retention duration and access-control security policies.',
-          'Input Validation: Secure file upload handling rejecting malformed or oversized inputs.',
-        ]
-      : finalRequirements,
-    milestones: isHelmetDetection
-      ? [
-          { name: 'Adverse-Condition Dataset Coverage Signoff', targetDate: '2026-10-12', status: 'In Progress' as const },
-          { name: 'OCR Accuracy Benchmark Validation', targetDate: '2026-10-15', status: 'In Progress' as const },
-          { name: 'Inference API Contract Freezing', targetDate: '2026-10-10', status: 'In Progress' as const },
-          { name: 'Evidence Persistence & Idempotency Tests', targetDate: '2026-10-14', status: 'Upcoming' as const },
-          { name: 'End-to-End Representative Test Pack Execution', targetDate: '2026-10-20', status: 'Upcoming' as const },
-          { name: 'Production Governance & Release Signoff', targetDate: '2026-10-25', status: 'Upcoming' as const },
-        ]
-      : finalMilestones,
-    deadlines: isHelmetDetection
-      ? [
-          { item: 'Inference API Contract Freezing', date: '2026-10-10', criticality: 'High' as const },
-          { item: 'Dataset Adverse-Condition Coverage', date: '2026-10-12', criticality: 'High' as const },
-          { item: 'OCR Accuracy Milestone Validation', date: '2026-10-15', criticality: 'High' as const },
-          { item: 'Evidence Retention Policy Approval', date: '2026-10-18', criticality: 'Medium' as const },
-          { item: 'Full E2E Release Test Pack Execution', date: '2026-10-20', criticality: 'Medium' as const },
-          { item: 'Target Production Deployment Window', date: '2026-10-25', criticality: 'High' as const },
-        ]
-      : finalDeadlines,
-    constraints: isHelmetDetection
-      ? [
-          'Must operate within target p95 inference latency on edge deployment hardware.',
-          'Must never invent or hallucinate OCR text on unreadable or distant number plates.',
-          'Repeated client requests with identical idempotency key must create only one evidence record.',
-          'Production rollout strictly blocked until security and privacy evidence-retention policies are signed off.',
-        ]
-      : finalConstraints,
+    summary: docs.length > 0
+      ? isHelmetDetection
+        ? `Project intelligence synthesized from ${docs.length} uploaded artifact(s) covering helmet detection and computer vision analysis (${docs.map((d: any) => d.name).join(', ')}).`
+        : `Project intelligence synthesized from ${docs.length} uploaded artifact(s) (${docs.map((d: any) => d.name).join(', ')}). Comprehensive extraction across strategic objectives, core deliverables, milestone roadmap, and risk registers.`
+      : EMPTY_SCOPE.summary,
+    scope: docs.length > 0
+      ? isHelmetDetection
+        ? `Computer-vision violation enforcement system boundaries based on ${docs.length} uploaded artifact(s).`
+        : `System boundaries established from ${docs.length} project artifact(s) (${primaryDocName}).`
+      : EMPTY_SCOPE.scope,
+    objectives: parsedObjectives,
+    deliverables: parsedDeliverables,
+    requirements: parsedRequirements,
+    milestones: parsedMilestones,
+    deadlines: finalDeadlines,
+    constraints: parsedConstraints,
   };
 
-  const documentationDossier = `1. User Stories & Scope Synthesis
-ID\tUser Story Narrative & Functional Scope\tAcceptance Criteria\tTarget Milestone\tPriority
-US-01\tAs an enforcement operator, I want automated helmet detection across traffic video frames so non-compliant riders are flagged with photographic evidence.\tModel validates bare-head detection with >= 94% precision across standard and adverse lighting.\tM-01: Dataset Signoff\tCritical
-US-02\tAs a system auditor, I want number-plate OCR text and cropped image evidence stored idempotently with unique trace IDs.\tNumber-plate characters digitized with >= 90% accuracy; repeated retries create zero duplicate records.\tM-04: Evidence Vault\tCritical
-US-03\tAs an operations supervisor, I want low-confidence detections (< 0.85) routed to manual review to prevent false-positive violation penalties.\tAmbiguous plate crops and partial helmet occlusions enter operator queue within 2 seconds.\tM-05: Review Queue\tHigh
-US-04\tAs an API developer, I want versioned request/response contracts so client integrations and test automation proceed without breaking changes.\tVersioned OpenAPI schema frozen with signed-off request/response payloads and mock server.\tM-03: API Freezing\tCritical
-US-05\tAs a compliance officer, I want strict evidence retention and access policies enforced to ensure privacy and regulatory adherence.\t90-day retention policy implemented with role-based access control and tamper-proof logs.\tM-06: Governance\tHigh
-US-06\tAs a deployment engineer, I want model inference p95 latency under 250ms on edge hardware so camera feed processing operates in real time.\tINT8 TensorRT quantization benchmarked with asynchronous frame ingestion queue.\tM-02: OCR Benchmark\tHigh
+  const userStoriesSection = parsedRequirements.length > 0 || parsedObjectives.length > 0
+    ? `1. Scope & Requirements Synthesis\nID\tStatement\tTarget\n` +
+      [...parsedObjectives, ...parsedRequirements].slice(0, 6).map((item, i) => `REQ-0${i + 1}\t${item}\tCore Delivery`).join('\n')
+    : `1. Scope & Requirements Synthesis\nNo explicit requirements or objectives identified in uploaded document(s).`;
 
-2. Risk Register & Delivery Forecasting
-ID\tRisk Category\tRisk Title\tProbability\tImpact\tSeverity\tMitigation Strategy\tOwner
-${extractedRisks.map((r, i) => `${r.id || `RSK-0${i + 1}`}\t${r.category || 'Technical'}\t${r.title}\t${typeof r.probability === 'number' ? `${r.probability}%` : r.probability || '65%'}\t${typeof r.impact === 'number' ? `${r.impact}%` : r.impact || '75%'}\t${r.severity || 'High'}\t${r.mitigation || 'Triage and execute mitigation roadmap'}\t${r.owner || 'Assigned Lead'}`).join('\n')}
+  const riskSection = extractedRisks.length > 0
+    ? `2. Risk Register & Delivery Forecasting\nID\tRisk Category\tRisk Title\tProbability\tImpact\tSeverity\tMitigation Strategy\tOwner\n` +
+      extractedRisks.map((r, i) => `${r.id || `RSK-0${i + 1}`}\t${r.category || 'Technical'}\t${r.title}\t${typeof r.probability === 'number' ? `${r.probability}%` : r.probability || '65%'}\t${typeof r.impact === 'number' ? `${r.impact}%` : r.impact || '75%'}\t${r.severity || 'High'}\t${r.mitigation || 'Triage and execute mitigation roadmap'}\t${r.owner || 'Assigned Lead'}`).join('\n')
+    : `2. Risk Register & Delivery Forecasting\nNo active risks detected in uploaded document(s).`;
 
-3. Action Items Register
-ID\tAction Deliverable\tAssigned Team\tTarget Deadline\tPriority\tStatus
-${extractedActions.map((a, i) => `${a.id || `A-0${i + 1}`}\t${a.task || a.title}\t${a.owner || 'Assigned Lead'}\t${a.deadline || a.dueDate || '2026-10-20'}\t${a.priority || 'High'}\t${a.status || 'Open'}`).join('\n')}`;
+  const actionSection = extractedActions.length > 0
+    ? `3. Action Items Register\nID\tAction Deliverable\tAssigned Team\tTarget Deadline\tPriority\tStatus\n` +
+      extractedActions.map((a, i) => `${a.id || `A-0${i + 1}`}\t${a.task || a.title}\t${a.owner || 'Assigned Lead'}\t${a.deadline || a.dueDate || '2026-10-20'}\t${a.priority || 'High'}\t${a.status || 'Open'}`).join('\n')
+    : `3. Action Items Register\nNo explicit action items detected in uploaded document(s).`;
+
+  const documentationDossier = `${userStoriesSection}\n\n${riskSection}\n\n${actionSection}`;
 
   return {
     blockers: extractedBlockers,
@@ -1039,7 +869,7 @@ function computeHealth() {
   const riskScore = Math.max(10, 100 - criticalRisks * 22 - highRisks * 10);
   const blockerScore = Math.max(10, 100 - activeBlockers * 18);
   const scheduleScore = Math.max(20, 85 - projectTasksAtRisk.length * 12);
-  const scopeScore = projectScope.requirements.length > 0 ? 88 : 50;
+  const scopeScore = projectScope.requirements.length > 0 ? 88 : 75;
   const resourceScore = 80;
 
   const overall = Math.round(
@@ -1051,7 +881,7 @@ function computeHealth() {
     overall,
     status,
     metrics: { riskScore, scheduleScore, scopeScore, blockerScore, resourceScore },
-    summary: `Project health stands at ${overall}/100 (${status}) based on ${store.total_chunks} vector chunks in ChromaDB.`,
+    summary: `Project health stands at ${overall}/100 (${status}) based on ${store.total_chunks} indexed vector chunks.`,
     trend: overall >= 75 ? 'Improving' : 'Declining',
     history: [{ date: new Date().toISOString().slice(0, 10), score: overall, note: `${status} evaluation` }],
   };
@@ -1066,9 +896,13 @@ function ensureIntelligenceParsed(force = false) {
     projectActions = [];
     projectTasksAtRisk = [];
     latestDocOutput = '';
+    hasParsedIntelligence = true;
+    lastParsedDocIds = '';
     return;
   }
-  if (force || projectBlockers.length === 0 || projectScope.objectives.length === 0 || !latestDocOutput || projectRisks.length === 0) {
+
+  const currentDocIds = store.documents.map((d: any) => `${d.id}:${d.name}`).join('|');
+  if (force || !hasParsedIntelligence || currentDocIds !== lastParsedDocIds) {
     const parsed = parseDocumentIntelligence(store.documents);
     projectBlockers = parsed.blockers;
     projectActions = parsed.actions;
@@ -1076,6 +910,8 @@ function ensureIntelligenceParsed(force = false) {
     projectScope = parsed.scope;
     projectRisks = parsed.risks;
     latestDocOutput = parsed.documentationOutput;
+    hasParsedIntelligence = true;
+    lastParsedDocIds = currentDocIds;
   }
 }
 
@@ -1270,16 +1106,34 @@ app.post('/api/upload-json', async (req: Request, res: Response) => {
     let fileBuffer: Buffer | null = null;
 
     if (f.base64) {
-      const base64Data = f.base64.replace(/^data:[^;]+;base64,/, '');
-      fileBuffer = Buffer.from(base64Data, 'base64');
-      text = await extractTextFromBuffer(f.name, fileBuffer);
-    } else if (f.content) {
-      text = f.content;
+      try {
+        const base64Data = f.base64.replace(/^data:[^;]+;base64,/, '');
+        fileBuffer = Buffer.from(base64Data, 'base64');
+        if (!fileBuffer || fileBuffer.length === 0) {
+          return res.status(422).json({ error: `Uploaded file '${f.name}' contains empty byte data (0 bytes).` });
+        }
+        text = await extractTextFromBuffer(f.name, fileBuffer);
+      } catch (err: any) {
+        return res.status(422).json({ error: `Failed to decode base64 file data for '${f.name}': ${err.message}` });
+      }
+    } else if (f.content !== undefined && f.content !== null) {
+      const trimmed = f.content.trim();
+      if (!trimmed) {
+        return res.status(422).json({ error: `Text content provided for '${f.name}' is empty or whitespace-only.` });
+      }
+      text = trimmed;
     } else {
-      text = `[Document: ${f.name}]\nProcessed and indexed for project analysis.`;
+      return res.status(422).json({ error: `Neither valid file bytes (base64) nor actual text content was provided for '${f.name}'.` });
+    }
+
+    if (!text || !text.trim()) {
+      return res.status(422).json({ error: `No readable text could be extracted from '${f.name}'. The file appears empty or unparseable.` });
     }
 
     const chunks = chunkDocumentText(text, docId, f.name, f.category || 'general');
+    if (!chunks || chunks.length === 0) {
+      return res.status(422).json({ error: `Could not generate semantic chunks for '${f.name}'. Extracted text content was insufficient.` });
+    }
     newChunks.push(...chunks);
 
     const sizeStr = f.size || `${Math.max(1, Math.round(text.length / 1024))} KB`;
@@ -1305,9 +1159,11 @@ app.post('/api/upload-json', async (req: Request, res: Response) => {
   ensureIntelligenceParsed(true);
 
   res.json({
-    message: `${newDocs.length} document(s) uploaded and indexed into ChromaDB.`,
+    message: `${newDocs.length} document(s) uploaded and indexed into JSON vector store (backend/chroma_db/vector_store.json).`,
     uploadedDocuments: newDocs,
     totalKnowledgeChunks: updatedChunks.length,
+    storageMode: 'json_fallback',
+    nativeChromaSuccess: false,
   });
 });
 
@@ -1328,9 +1184,20 @@ app.post('/api/upload', upload.array('files') as any, async (req: Request, res: 
     const docId = `doc-${Date.now()}-${idx}`;
     const ext = file.originalname.includes('.') ? file.originalname.split('.').pop()?.toUpperCase() : 'TXT';
 
+    if (!file.buffer || file.buffer.length === 0) {
+      return res.status(422).json({ error: `Uploaded file '${file.originalname}' is empty (0 bytes).` });
+    }
+
     // In-memory text extraction from buffer (no files stored on disk)
     const text = await extractTextFromBuffer(file.originalname, file.buffer);
+    if (!text || !text.trim()) {
+      return res.status(422).json({ error: `No readable text could be extracted from '${file.originalname}'. The file appears empty or unparseable.` });
+    }
+
     const chunks = chunkDocumentText(text, docId, file.originalname, 'general');
+    if (!chunks || chunks.length === 0) {
+      return res.status(422).json({ error: `Could not generate semantic chunks for '${file.originalname}'. Extracted content was insufficient.` });
+    }
     newChunks.push(...chunks);
 
     const sizeKB = file.size / 1024;
@@ -1356,9 +1223,11 @@ app.post('/api/upload', upload.array('files') as any, async (req: Request, res: 
   ensureIntelligenceParsed(true);
 
   res.json({
-    message: `${newDocs.length} document(s) uploaded and indexed into ChromaDB.`,
+    message: `${newDocs.length} document(s) uploaded and indexed into JSON vector store (backend/chroma_db/vector_store.json).`,
     uploadedDocuments: newDocs,
     totalKnowledgeChunks: updatedChunks.length,
+    storageMode: 'json_fallback',
+    nativeChromaSuccess: false,
   });
 });
 
@@ -1383,7 +1252,7 @@ app.delete('/api/documents/:id', async (req: Request, res: Response) => {
     ensureIntelligenceParsed(true);
   }
 
-  res.json({ message: `Document ${docId} deleted from ChromaDB.`, remainingDocuments: updatedDocs.length });
+  res.json({ message: `Document ${docId} deleted from vector store.`, remainingDocuments: updatedDocs.length });
 });
 
 // POST /api/documents/clear-all & DELETE /api/documents
@@ -1398,7 +1267,7 @@ const clearAllHandler = async (req: Request, res: Response) => {
   projectTasksAtRisk = [];
   latestDocOutput = '';
 
-  res.json({ message: 'All documents and ChromaDB vector embeddings cleared.', remainingDocuments: 0 });
+  res.json({ message: 'All documents and vector store entries cleared.', remainingDocuments: 0 });
 };
 app.post('/api/documents/clear-all', clearAllHandler);
 app.delete('/api/documents', clearAllHandler);
@@ -1540,35 +1409,99 @@ app.post('/api/ask', async (req: Request, res: Response) => {
   if (await forwardToFastApi(req, res, '/api/ask')) return;
 
   ensureIntelligenceParsed();
-  const query = (req.body.query || req.body.question || '').toLowerCase();
+  const rawQuery = (req.body.query || req.body.question || '').trim();
+  if (!rawQuery) {
+    return res.json({
+      answer: 'Please provide a question or search query regarding your project documents.',
+      agentUsed: 'Conversational Router Agent',
+      sources: [],
+      suggestedFollowUps: ['What are the highest priority risks?', 'Summarize project scope and milestones.'],
+    });
+  }
+
+  const query = rawQuery.toLowerCase();
+  const tokens = (query.match(/[a-zA-Z0-9_-]+/g) || []).filter(
+    (w: string) => w.length > 2 && !['the', 'and', 'for', 'with', 'what', 'how', 'are', 'about', 'this', 'that'].includes(w)
+  );
+
+  const store = readChromaStore();
+  const scoredChunks: Array<{ chunk: any; matches: number; score: number }> = [];
+
+  for (const c of store.chunks) {
+    const textLower = (c.text || '').toLowerCase();
+    const nameLower = (c.document_name || '').toLowerCase();
+    let matches = 0;
+    for (const t of tokens) {
+      if (textLower.includes(t)) matches += 2;
+      if (nameLower.includes(t)) matches += 3;
+    }
+    if (matches > 0) {
+      scoredChunks.push({ chunk: c, matches, score: matches / (tokens.length * 2 + 2) });
+    }
+  }
+
+  scoredChunks.sort((a, b) => b.matches - a.matches);
+  const sources: string[] = [];
+  scoredChunks.slice(0, 4).forEach(({ chunk }) => {
+    if (chunk.document_name && !sources.includes(chunk.document_name)) {
+      sources.push(chunk.document_name);
+    }
+  });
+
   let answer = '';
   let agentUsed = 'Conversational Router Agent';
 
-  if (query.includes('risk') || query.includes('threat')) {
+  if (scoredChunks.length > 0) {
+    agentUsed = 'Extractive RAG Evidence Agent';
+    const evidenceList = scoredChunks.slice(0, 3).map(({ chunk }, idx) => {
+      const cText = (chunk.text || '').trim();
+      const sentences = cText.split(/(?<=[.!?\n])\s+/);
+      const matchingSentences = sentences.filter((s: string) =>
+        tokens.some((t: string) => s.toLowerCase().includes(t))
+      );
+      const excerpt = matchingSentences.length > 0 ? matchingSentences.slice(0, 2).join(' ') : cText.slice(0, 250);
+      return `**Evidence Excerpt ${idx + 1}** *(from \`${chunk.document_name}\`, Page ${chunk.page || 1})*:\n> "${excerpt.trim()}"`;
+    });
+
+    answer = `### Extractive Document Evidence\n\nBased on the retrieved content from your uploaded project artifacts, here is the relevant factual evidence:\n\n${evidenceList.join('\n\n')}\n\n---\n*Grounded directly in ${evidenceList.length} indexed knowledge chunk(s). No unverified external facts were introduced.*`;
+  } else if (
+    (query.includes('health') || query.includes('status')) &&
+    !tokens.some((t: string) => !['health', 'score', 'status', 'project'].includes(t))
+  ) {
+    agentUsed = 'Health Scoring Engine';
+    const h = computeHealth();
+    answer = `### Composite Project Health Assessment\n\nOverall Health: **${h.overall}/100** (${h.status})\n\n- Risk Factor Score: ${h.metrics.riskScore}%\n- Blocker Score: ${h.metrics.blockerScore}%\n- Schedule Adherence: ${h.metrics.scheduleScore}%\n- Scope Clarity: ${h.metrics.scopeScore}%\n- Resource Capacity: ${h.metrics.resourceScore}%\n\n**Executive Assessment:** ${h.summary}`;
+  } else if (
+    (query.includes('risk') || query.includes('threat')) &&
+    !tokens.some((t: string) => !['risk', 'risks', 'threat', 'what', 'project'].includes(t))
+  ) {
     agentUsed = 'Risk Detection Agent';
     answer =
       projectRisks.length > 0
-        ? `Identified Risks:\n\n${projectRisks.map((r) => `- **${r.id}: ${r.title}** (${r.severity}) — Mitigation: ${r.mitigation}`).join('\n')}`
-        : 'No critical risks currently detected. Upload your project documents to extract risks.';
-  } else if (query.includes('blocker') || query.includes('blocked')) {
-    agentUsed = 'Blocker Agent';
+        ? `### Active Project Risk Register\n\n${projectRisks.map((r) => `- **${r.id}: ${r.title}** (${r.severity}, ${r.category}) — Mitigation: ${r.mitigation}`).join('\n')}`
+        : 'No active risks are currently registered in the project store. Upload project documents to extract and track risks.';
+  } else if (
+    (query.includes('blocker') || query.includes('blocked')) &&
+    !tokens.some((t: string) => !['blocker', 'blockers', 'what', 'project'].includes(t))
+  ) {
+    agentUsed = 'Blocker Identification Agent';
     answer =
       projectBlockers.length > 0
-        ? `Active Blockers:\n\n${projectBlockers.map((b) => `- **${b.id}: ${b.title}** [${b.priority}] — Owner: ${b.owner} — Resolution: ${b.suggestedResolution}`).join('\n')}`
+        ? `### Active Project Blockers\n\n${projectBlockers.map((b) => `- **${b.id}: ${b.title}** [${b.priority}] — Owner: ${b.owner} — Resolution: ${b.suggestedResolution}`).join('\n')}`
         : 'No active blockers currently logged in the project knowledge base.';
-  } else if (query.includes('health') || query.includes('score')) {
-    agentUsed = 'Health Scoring Engine';
-    const h = computeHealth();
-    answer = `Project Health: **${h.overall}/100** (${h.status}).\n\n- Risk Score: ${h.metrics.riskScore}%\n- Blocker Score: ${h.metrics.blockerScore}%\n- Schedule Score: ${h.metrics.scheduleScore}%\n\n${h.summary}`;
   } else {
-    agentUsed = 'Scope Agent';
-    answer = `### Project Intelligence Overview\n\n${projectScope.summary}\n\n**Key Objectives:**\n${(projectScope.objectives || []).map((o: any) => `- ${o}`).join('\n')}`;
+    agentUsed = 'Extractive RAG Retrieval Engine';
+    if (store.documents.length === 0) {
+      answer = 'The project knowledge base is currently empty. Upload your project documents (PDF, DOCX, XLSX, CSV, TXT) to extract verifiable facts and ask questions.';
+    } else {
+      answer = `No relevant evidence was found in the indexed project documents for query: **"${rawQuery}"**.\n\nThe indexed artifacts (${store.documents.slice(0, 3).map((d: any) => d.name).join(', ')}) do not contain matching statements. Please verify that the pertinent document section is uploaded.`;
+    }
   }
 
   res.json({
     answer,
     agentUsed,
-    sources: [],
+    sources,
     suggestedFollowUps: ['What are the highest priority risks?', 'How can we resolve active blockers?'],
   });
 });
@@ -1644,10 +1577,20 @@ app.get('/api/sample-files/:format', (req: Request, res: Response) => {
 });
 
 app.get('/api/sample-files/download/:filename', (req: Request, res: Response) => {
-  const filename = req.params.filename || 'sample.txt';
-  res.setHeader('Content-Type', 'text/plain');
-  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-  res.send(`Sample file content for ${filename}\n`);
+  const filename = req.params.filename || '';
+  const candidates = [
+    path.resolve(process.cwd(), 'backend/storage/files', filename),
+    path.resolve(process.cwd(), 'backend/chroma_db/files', filename),
+    path.resolve(process.cwd(), 'backend/storage/chroma_db/files', filename),
+  ];
+  for (const cPath of candidates) {
+    if (fs.existsSync(cPath) && fs.statSync(cPath).isFile()) {
+      return res.download(cPath, filename);
+    }
+  }
+  return res.status(404).json({
+    error: `Requested sample file '${filename}' was not found on the server. No placeholder content is generated.`,
+  });
 });
 
 // POST /api/project/reset

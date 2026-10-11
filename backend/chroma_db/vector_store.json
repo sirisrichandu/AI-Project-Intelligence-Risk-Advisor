@@ -2,49 +2,9 @@
   "collection": "project_knowledge_base",
   "storage_engine": "ChromaDB Persistent Store",
   "persist_directory": "./backend/chroma_db",
-  "total_chunks": 2,
-  "total_documents": 2,
-  "last_updated": "2026-10-10T01:00:10.934339Z",
-  "documents": [
-    {
-      "id": "doc-1791594002283-0",
-      "name": "Sprint_Plan.md",
-      "type": "MD",
-      "size": "1 KB",
-      "category": "general",
-      "chunkCount": 1,
-      "uploadDate": "2026-10-10",
-      "status": "COMPLETED"
-    },
-    {
-      "id": "doc-1791594010933-0",
-      "name": "Sprint_Plan.md",
-      "type": "MD",
-      "size": "1 KB",
-      "category": "general",
-      "chunkCount": 1,
-      "uploadDate": "2026-10-10",
-      "status": "COMPLETED"
-    }
-  ],
-  "chunks": [
-    {
-      "id": "doc-1791594002283-0_chunk_0",
-      "document_id": "doc-1791594002283-0",
-      "document_name": "Sprint_Plan.md",
-      "category": "general",
-      "page": 1,
-      "text": "Deliverable: Edge Computer Vision Pipeline due 2026-11-15. Critical Risk: Model inference latency exceeds 80ms threshold. Blocker: Missing GPU edge server deployment in staging.",
-      "created_at": "2026-10-10T01:00:02.283915Z"
-    },
-    {
-      "id": "doc-1791594010933-0_chunk_0",
-      "document_id": "doc-1791594010933-0",
-      "document_name": "Sprint_Plan.md",
-      "category": "general",
-      "page": 1,
-      "text": "Deliverable: Edge Computer Vision Pipeline due 2026-11-15. Critical Risk: Model inference latency exceeds 80ms threshold. Blocker: Missing GPU edge server deployment in staging.",
-      "created_at": "2026-10-10T01:00:10.933585Z"
-    }
-  ]
+  "total_chunks": 0,
+  "total_documents": 0,
+  "last_updated": "2026-10-11T12:13:30.829Z",
+  "documents": [],
+  "chunks": []
 }

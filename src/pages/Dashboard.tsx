@@ -41,6 +41,15 @@ interface DashboardProps {
   onNavigate: (page: string) => void;
 }
 
+const formatDeadline = (dl: any): string => {
+  if (!dl) return 'Under Evaluation';
+  if (typeof dl === 'string') return dl;
+  if (typeof dl === 'object') {
+    return dl.date ? `${dl.date}${dl.item ? ` - ${dl.item}` : ''}` : (dl.item || 'Under Evaluation');
+  }
+  return String(dl);
+};
+
 export const Dashboard: React.FC<DashboardProps> = ({
   summary,
   health,
@@ -217,7 +226,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             <Calendar className="w-4 h-4 text-indigo-400 group-hover:scale-110 transition-transform" />
           </div>
           <div className="text-lg font-bold text-white font-mono truncate leading-8">
-            {summary?.projectDeadline || 'Under Evaluation'}
+            {formatDeadline(summary?.projectDeadline)}
           </div>
           <div className="mt-1 text-xs text-slate-400 font-medium">
             {summary?.pendingActions ?? 0} Pending Actions · {summary?.upcomingDeadlines ?? 0} Milestones
