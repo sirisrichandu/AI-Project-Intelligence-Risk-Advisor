@@ -17,3 +17,7 @@ env/
 venv/
 .venv/
 ENV/
+
+# Local ChromaDB data
+backend/storage/chroma_db/chroma.sqlite3
+backend/storage/chroma_db/vector_store.json
